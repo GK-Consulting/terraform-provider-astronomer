@@ -8,11 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	api "github.com/openglshaders/astronomer-api/v2"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &DeploymentDataSource{}
 
 func NewDeploymentDataSource() datasource.DataSource {
@@ -20,7 +18,9 @@ func NewDeploymentDataSource() datasource.DataSource {
 }
 
 type DeploymentDataSource struct {
-	client *http.Client
+	client         *http.Client
+	token          string
+	organizationId string
 }
 
 type DeploymentDataSourceModel struct {
@@ -32,11 +32,10 @@ type DeploymentDataSourceModel struct {
 	IsCicdEnforced types.Bool   `tfsdk:"is_cicd_enforced"`
 	Name           types.String `tfsdk:"name"`
 	Description    types.String `tfsdk:"description"`
-	OrganizationId types.String `tfsdk:"organization_id"`
 }
 
 func (d *DeploymentDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = "astronomer_deployment"
+	resp.TypeName = req.ProviderTypeName + "_deployment"
 }
 
 func (d *DeploymentDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -77,10 +76,6 @@ func (d *DeploymentDataSource) Schema(ctx context.Context, req datasource.Schema
 				MarkdownDescription: "Description of Workspace",
 				Computed:            true,
 			},
-			"organization_id": schema.StringAttribute{
-				MarkdownDescription: "Organization Id",
-				Required:            true,
-			},
 		},
 	}
 }
@@ -102,23 +97,22 @@ func (d *DeploymentDataSource) Configure(ctx context.Context, req datasource.Con
 		return
 	}
 
-	d.client = provider.client
+	d.token = provider.Token
 }
 
 func (d *DeploymentDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data DeploymentDataSourceModel
 
-	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	decoded, err := api.GetDeployment(data.OrganizationId.ValueString(), data.Id.ValueString())
+	decoded, err := api.GetDeployment(d.token, d.organizationId, data.Id.ValueString())
 
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error"))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf(err.Error()))
 		return
 	}
 
@@ -130,12 +124,6 @@ func (d *DeploymentDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	data.Id = types.StringValue(decoded.Id)
 	data.IsCicdEnforced = types.BoolValue(decoded.IsCicdEnforced)
 	data.Name = types.StringValue(decoded.Name)
-	data.OrganizationId = types.StringValue(decoded.OrganizationId)
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
-	tflog.Trace(ctx, "read a data source")
-
-	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

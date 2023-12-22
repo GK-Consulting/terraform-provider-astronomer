@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	api "github.com/openglshaders/astronomer-api/v2"
 )
 
@@ -26,7 +25,9 @@ func NewDeploymentResource() resource.Resource {
 }
 
 type DeploymentResource struct {
-	client *http.Client
+	client         *http.Client
+	token          string
+	organizationId string
 }
 
 type DeploymentResourceModel struct {
@@ -41,7 +42,6 @@ type DeploymentResourceModel struct {
 	IsDagDeployEnforced  types.Bool         `tfsdk:"is_dag_deploy_enforced"`
 	IsHighAvailability   types.Bool         `tfsdk:"is_high_availability"`
 	Name                 types.String       `tfsdk:"name"`
-	OrganizationId       types.String       `tfsdk:"organization_id"`
 	Region               types.String       `tfsdk:"region"`
 	ResourceQuotaCpu     types.String       `tfsdk:"resource_quota_cpu"`
 	ResourceQuotaMemory  types.String       `tfsdk:"resource_quota_memory"`
@@ -138,10 +138,6 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "Description of Workspace",
 				Required:            true,
 			},
-			"organization_id": schema.StringAttribute{
-				MarkdownDescription: "Organization Id",
-				Required:            true,
-			},
 			"worker_queues": schema.ListNestedAttribute{
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -196,7 +192,8 @@ func (r *DeploymentResource) Configure(ctx context.Context, req resource.Configu
 		return
 	}
 
-	r.client = provider.client
+	r.token = provider.Token
+	r.organizationId = provider.OrganizationId
 }
 
 func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -235,27 +232,17 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 		WorkspaceId:  data.WorkspaceId.ValueString(),
 	}
 
-	deployResponse, err := api.CreateDeployment(data.OrganizationId.ValueString(), deploymentCreateRequest)
+	deployResponse, err := api.CreateDeployment(r.token, r.organizationId, deploymentCreateRequest)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
 		return
 	}
 
-	log.Println("deployResponse")
-	log.Println(deployResponse)
-	log.Println(deployResponse.Status)
-	for deployResponse.Status != "HEALTHY" {
-		log.Println("deployResponse")
-		log.Println(deployResponse)
-		log.Println(deployResponse.Status)
-		deployResponse, err = api.GetDeployment(data.OrganizationId.ValueString(), deployResponse.Id)
+	for deployResponse.Status != api.DeploymentStatusHealthy {
+		deployResponse, err = api.GetDeployment(r.token, r.organizationId, deployResponse.Id)
 		time.Sleep(1 * time.Second)
 	}
-
-	//TODO wait for status to be healthy
-
-	log.Println(deployResponse)
 
 	// TODO fill out the rest
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployResponse.CloudProvider))
@@ -265,7 +252,6 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	// data.Metadata
 	data.Name = types.StringValue(deployResponse.Name)
 	// data.Node = types.StringValue(deployResponse.Name)
-	data.OrganizationId = types.StringValue(deployResponse.OrganizationId)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
 	data.Region = types.StringValue(deployResponse.Region)
@@ -277,11 +263,6 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	// data.VpcSubnetRange
 	data.WorkspaceId = types.StringValue(deployResponse.WorkspaceId)
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
-	tflog.Trace(ctx, "created a resource")
-
-	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -304,7 +285,7 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	var data DeploymentResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-	deployment, err := api.GetDeployment(data.OrganizationId.ValueString(), data.Id.ValueString())
+	deployment, err := api.GetDeployment(r.token, r.organizationId, data.Id.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
@@ -318,7 +299,6 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	// data.Metadata
 	data.Name = types.StringValue(deployment.Name)
 	// data.Node = types.StringValue(deployResponse.Name)
-	data.OrganizationId = types.StringValue(deployment.OrganizationId)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
 	data.Region = types.StringValue(deployment.Region)
@@ -369,7 +349,7 @@ func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 		WorkspaceId: data.WorkspaceId.ValueString(),
 	}
 
-	deployResponse, err := api.UpdateDeployment(data.OrganizationId.ValueString(), data.Id.ValueString(), deploymentUpdateRequest)
+	deployResponse, err := api.UpdateDeployment(r.token, r.organizationId, data.Id.ValueString(), deploymentUpdateRequest)
 	log.Println(deployResponse)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
@@ -388,14 +368,13 @@ func (r *DeploymentResource) Delete(ctx context.Context, req resource.DeleteRequ
 		return
 	}
 
-	err := api.DeleteDeployment(data.OrganizationId.ValueString(), data.Id.ValueString())
+	err := api.DeleteDeployment(r.token, r.organizationId, data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 		return
 	}
 }
 
-// TODO what is this
 func (r *DeploymentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

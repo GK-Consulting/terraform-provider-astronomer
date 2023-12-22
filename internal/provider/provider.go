@@ -2,7 +2,7 @@ package provider
 
 import (
 	"context"
-	"net/http"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ensure AstronomerProvider satisfies various provider interfaces.
 var _ provider.Provider = &AstronomerProvider{}
 
 type AstronomerProvider struct {
@@ -29,13 +28,11 @@ type AstronomerProviderModel struct {
 type AstronomerProviderResourceDataModel struct {
 	Token          string
 	OrganizationId string
-	client         *http.Client
 }
 
 type AstronomerProviderDataSourceDataModel struct {
 	Token          string
 	OrganizationId string
-	client         *http.Client
 }
 
 func (p *AstronomerProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -47,13 +44,13 @@ func (p *AstronomerProvider) Schema(ctx context.Context, req provider.SchemaRequ
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"token": schema.StringAttribute{
-				Required:            false,
+				Optional:            true,
 				Sensitive:           true,
-				MarkdownDescription: "Astronomer API Token",
+				MarkdownDescription: "Astronomer API Token. Can be set with an `ASTRONOMER_API_TOKEN` env var.",
 			},
 			"organization_id": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "Example provider attribute",
+				MarkdownDescription: "Organization id this provider will operate on.",
 			},
 		},
 	}
@@ -68,20 +65,23 @@ func (p *AstronomerProvider) Configure(ctx context.Context, req provider.Configu
 		return
 	}
 
-	// if not token {
-	// 	token := os.EnvDefaultFunc("ASTRONOMER_API_TOKEN", nil),
-	// }
+	if data.Token.IsNull() {
+		data.Token = types.StringValue(os.Getenv("ASTRONOMER_API_TOKEN"))
+	}
 
-	client := http.DefaultClient
+	if data.Token.ValueString() == "" {
+		panic("No api key provided - either via provider configuration or environment variable.")
+	}
+
 	dataSourceModel := new(AstronomerProviderDataSourceDataModel)
-	dataSourceModel.client = client
 	dataSourceModel.Token = data.Token.ValueString()
+	dataSourceModel.OrganizationId = data.OrganizationId.ValueString()
 
 	resp.DataSourceData = dataSourceModel
 
 	dataModel := new(AstronomerProviderResourceDataModel)
-	dataModel.client = client
 	dataModel.Token = data.Token.ValueString()
+	dataModel.OrganizationId = data.OrganizationId.ValueString()
 
 	resp.ResourceData = dataModel
 }
@@ -96,7 +96,7 @@ func (p *AstronomerProvider) Resources(ctx context.Context) []func() resource.Re
 func (p *AstronomerProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewWorkspaceDataSource,
-		NewOrganizationDataSource,
+		// NewOrganizationDataSource,
 		NewDeploymentDataSource,
 	}
 }

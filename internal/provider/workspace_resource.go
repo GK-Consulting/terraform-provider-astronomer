@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -23,7 +22,8 @@ func NewWorkspaceResource() resource.Resource {
 }
 
 type WorkspaceResource struct {
-	client *http.Client
+	token          string
+	organizationId string
 }
 
 type WorkspaceResourceModel struct {
@@ -31,14 +31,13 @@ type WorkspaceResourceModel struct {
 	CicdEnforcedDefault types.Bool   `tfsdk:"cicd_enforced_default"`
 	Description         types.String `tfsdk:"description"`
 	Name                types.String `tfsdk:"name"`
-	OrganizationId      types.String `tfsdk:"organization_id"`
 }
 
-func (d *WorkspaceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "astronomer_workspace"
+func (r *WorkspaceResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_workspace"
 }
 
-func (d *WorkspaceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *WorkspaceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Astronomer Workspace Resource",
@@ -63,15 +62,11 @@ func (d *WorkspaceResource) Schema(ctx context.Context, req resource.SchemaReque
 				MarkdownDescription: "Description of Workspace",
 				Optional:            true,
 			},
-			"organization_id": schema.StringAttribute{
-				MarkdownDescription: "Organization Id",
-				Required:            true,
-			},
 		},
 	}
 }
 
-func (d *WorkspaceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *WorkspaceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -88,7 +83,8 @@ func (d *WorkspaceResource) Configure(ctx context.Context, req resource.Configur
 		return
 	}
 
-	d.client = provider.client
+	r.token = provider.Token
+	r.organizationId = provider.OrganizationId
 }
 
 func (r *WorkspaceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -106,31 +102,25 @@ func (r *WorkspaceResource) Create(ctx context.Context, req resource.CreateReque
 		Name:                data.Name.ValueString(),
 	}
 
-	workspace, err := api.CreateWorkspace(data.OrganizationId.ValueString(), workspaceCreateRequest)
+	workspace, err := api.CreateWorkspace(r.token, r.organizationId, workspaceCreateRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create workspace, got error: %+v\n", err))
 		return
 	}
 	data.Id = types.StringValue(workspace.Id)
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
-	tflog.Trace(ctx, fmt.Sprintf("Unable to create workspace, got error: %s", workspace.Id))
-
-	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (d *WorkspaceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *WorkspaceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data WorkspaceResourceModel
 
-	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	decoded, err := api.GetWorkspace(data.OrganizationId.ValueString(), data.Id.ValueString())
+	decoded, err := api.GetWorkspace(r.token, r.organizationId, data.Id.ValueString())
 
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error"))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf(err.Error()))
 		return
 	}
 
@@ -138,20 +128,13 @@ func (d *WorkspaceResource) Read(ctx context.Context, req resource.ReadRequest, 
 	data.CicdEnforcedDefault = types.BoolValue(decoded.CicdEnforcedDefault)
 	data.Description = types.StringValue(decoded.Description)
 	data.Name = types.StringValue(decoded.Name)
-	data.OrganizationId = types.StringValue(decoded.OrganizationId)
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
-	tflog.Trace(ctx, "read a data source")
-
-	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *WorkspaceResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data WorkspaceResourceModel
 
-	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	tflog.Debug(ctx, "")
@@ -164,13 +147,12 @@ func (r *WorkspaceResource) Update(ctx context.Context, req resource.UpdateReque
 		Description:         data.Description.ValueString(),
 		Name:                data.Name.ValueString(),
 	}
-	_, err := api.UpdateWorkspace(data.OrganizationId.ValueString(), data.Id.ValueString(), updateReq)
+	_, err := api.UpdateWorkspace(r.token, r.organizationId, data.Id.ValueString(), updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
 		return
 	}
 
-	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -183,7 +165,7 @@ func (r *WorkspaceResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	err := api.DeleteWorkspace(data.OrganizationId.ValueString(), data.Id.ValueString())
+	err := api.DeleteWorkspace(r.token, r.organizationId, data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
 		return

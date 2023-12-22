@@ -36,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "github.com/GK-Consulting/terraform-provider-astronomer",
+		Address: "registry.terraform.io/gk-consulting/astronomer",
 		Debug:   debug,
 	}
 
