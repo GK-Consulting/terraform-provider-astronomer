@@ -1,6 +1,6 @@
 # Astronomer Provider 
 
-[GK Consulting](https://gkconsulting.dev/) is a DevOps / Infrastructure shop. We think Astronomer is the right choice for a company who doesn't want to deal with the organizational challenges of managing their own Airflow cluster. However, we didn't like the fact we couldn't provision it like all our other infrastructure - via Terraform. We built this module so that it would benefit our clients and allow us to continue to adhere to best practices. We are committed to maintaining this repository - PRs are welcome. 
+[GK Consulting](https://gkconsulting.dev/) is a DevOps / Infrastructure shop. We think Astronomer is the right choice for a company who doesn't want to deal with the organizational challenges of managing their own Airflow cluster. However, we didn't like the fact we couldn't provision it like all our other infrastructure - via Terraform. We built this provider so that it would benefit our clients and allow us to continue to adhere to best practices. We are committed to maintaining this repository - PRs are welcome. 
 
 Astronomer's API isn't out of beta yet but when it comes out of beta, we will bump our provider to v1.0 (along with any necessary changes).
 
