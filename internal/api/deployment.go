@@ -174,22 +174,6 @@ type DeploymentCreateResponse struct {
 
 type DeploymentDeleteResponse struct{}
 
-func ListDeployments(apiKey string, organizationId string, limit int, offset int, sorts []string, deploymentIds []string, workspaceIds []string) (*DeploymentListResponse, error) {
-	// TODO Validate limit, offset, etc
-	// TODO use all the params
-	if organizationId == "" {
-		return nil, fmt.Errorf("No Organization ID Given.")
-	}
-
-	request, _ := http.NewRequest("GET", urlBase+organizationId+"/deployments", nil)
-	decoded := new(DeploymentListResponse)
-	err := getObjectFromApi(apiKey, request, &decoded)
-	if err != nil {
-		return nil, fmt.Errorf("%s", err)
-	}
-	return decoded, nil
-}
-
 func DeleteDeployment(apiKey string, organizationId string, deploymentId string) error {
 	request, _ := http.NewRequest("DELETE", urlBase+organizationId+"/deployments/"+deploymentId, nil)
 	_, httpErr := makeAuthorizedRequest(request, apiKey)

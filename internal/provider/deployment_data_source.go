@@ -45,15 +45,15 @@ func (d *DeploymentDataSource) Schema(ctx context.Context, req datasource.Schema
 
 		Attributes: map[string]schema.Attribute{
 			"airflow_version": schema.StringAttribute{
-				MarkdownDescription: "Airflow Version",
+				MarkdownDescription: "The Deployment's Astro Runtime version.",
 				Computed:            true,
 			},
 			"cloud_provider": schema.StringAttribute{
-				MarkdownDescription: "Cloud Provider",
+				MarkdownDescription: "The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.",
 				Computed:            true,
 			},
 			"cluster_id": schema.StringAttribute{
-				MarkdownDescription: "Cluster Id",
+				MarkdownDescription: "The ID of the cluster to which the Deployment will be created in. Optional if cloud provider and region is specified.",
 				Computed:            true,
 			},
 			"cluster_name": schema.StringAttribute{
@@ -61,19 +61,19 @@ func (d *DeploymentDataSource) Schema(ctx context.Context, req datasource.Schema
 				Computed:            true,
 			},
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Deployment Identifier",
+				MarkdownDescription: "The Deployment's Identifier",
 				Required:            true,
 			},
 			"is_cicd_enforced": schema.BoolAttribute{
-				MarkdownDescription: "CI CD default",
+				MarkdownDescription: "Whether the Deployment requires that all deploys are made through CI/CD.",
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name",
+				MarkdownDescription: "The Deployment's name.",
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Description of Workspace",
+				MarkdownDescription: "The Deployment's description.",
 				Computed:            true,
 			},
 		},

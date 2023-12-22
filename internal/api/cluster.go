@@ -109,17 +109,6 @@ type ClusterUpdateRequest struct {
 
 type ClusterDeleteResponse struct{}
 
-func ListClusters(apiKey string, organizationId string, provider string, limit int, offset int, sorts []string) (*ClusterListResponse, error) {
-	//TODO Validate limit, offset
-	request, _ := http.NewRequest("GET", urlBase+organizationId+"/clusters", nil)
-	decoded := new(ClusterListResponse)
-	err := getObjectFromApi(apiKey, request, &decoded)
-	if err != nil {
-		return nil, fmt.Errorf("%s", err)
-	}
-	return decoded, nil
-}
-
 func GetCluster(apiKey string, organizationId string, clusterId string) (*ClusterResponse, error) {
 	request, _ := http.NewRequest("GET", urlBase+organizationId+"/clusters/"+clusterId, nil)
 	decoded := new(ClusterResponse)

@@ -72,70 +72,70 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 
 		Attributes: map[string]schema.Attribute{
 			"astro_runtime_version": schema.StringAttribute{
-				MarkdownDescription: "Astro Version",
+				MarkdownDescription: "Deployment's Astro Runtime version.",
 				Required:            true,
 			},
 			"cloud_provider": schema.StringAttribute{
-				MarkdownDescription: "Cloud Provider",
+				MarkdownDescription: "The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.",
 				Required:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Description",
+				MarkdownDescription: "The Deployment's description.",
 				Optional:            true,
 			},
 			"default_task_pod_cpu": schema.StringAttribute{
-				MarkdownDescription: "Default Task Pod CPU Amount",
+				MarkdownDescription: "The default CPU resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in number of CPU cores.",
 				Required:            true,
 			},
 			"default_task_pod_memory": schema.StringAttribute{
-				MarkdownDescription: "Default Task Pod Memory Amount",
+				MarkdownDescription: "The default memory resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in `Gi`. This value must always be twice the value of `DefaultTaskPodCpu`.",
 				Required:            true,
 			},
 			"executor": schema.StringAttribute{
-				MarkdownDescription: "Which Executor to use",
+				MarkdownDescription: "The Deployment's executor type.",
 				Required:            true,
 			},
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Cluster Id",
+				MarkdownDescription: "The Deployment's identifier.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"is_cicd_enforced": schema.BoolAttribute{
-				MarkdownDescription: "CI CD default",
+				MarkdownDescription: "Whether the Deployment requires that all deploys are made through CI/CD.",
 				Required:            true,
 			},
 			"is_dag_deploy_enforced": schema.BoolAttribute{
-				MarkdownDescription: "CI CD default",
+				MarkdownDescription: "Whether the Deployment has DAG deploys enabled.",
 				Required:            true,
 			},
 			"is_high_availability": schema.BoolAttribute{
-				MarkdownDescription: "CI CD default",
+				MarkdownDescription: "Whether the Deployment is configured for high availability. If `true`, multiple scheduler pods will be online.",
 				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name",
+				MarkdownDescription: "The Deployment's name.",
 				Required:            true,
 			},
 			"region": schema.StringAttribute{
-				MarkdownDescription: "Name",
+				MarkdownDescription: "The region to host the Deployment in. Optional if `ClusterId` is specified.",
 				Required:            true,
 			},
 			"resource_quota_cpu": schema.StringAttribute{
-				MarkdownDescription: "Resource Quota CPU",
+				MarkdownDescription: "The CPU quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current CPU usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in number of CPU cores.",
 				Required:            true,
 			},
 			"resource_quota_memory": schema.StringAttribute{
-				MarkdownDescription: "Resource Quota CPU",
+				MarkdownDescription: "The memory quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current memory usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in `Gi`. This value must always be twice the value of `ResourceQuotaCpu`.",
 				Required:            true,
 			},
 			"scheduler_size": schema.StringAttribute{
-				MarkdownDescription: "Resource Quota CPU",
+				MarkdownDescription: "The size of the scheduler pod.",
 				Required:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "Description of Workspace",
+				MarkdownDescription: "The type of the Deployment.",
 				Required:            true,
 			},
 			"worker_queues": schema.ListNestedAttribute{
@@ -164,11 +164,11 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 						},
 					},
 				},
-				MarkdownDescription: "Workspace Id",
+				MarkdownDescription: "The list of worker queues configured for the Deployment. Applies only when `Executor` is `CELERY`. At least 1 worker queue is needed. All Deployments need at least 1 worker queue called `default`.",
 				Required:            true,
 			},
 			"workspace_id": schema.StringAttribute{
-				MarkdownDescription: "Workspace Id",
+				MarkdownDescription: "The ID of the workspace to which the Deployment belongs.",
 				Required:            true,
 			},
 		},

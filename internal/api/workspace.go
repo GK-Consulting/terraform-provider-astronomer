@@ -42,18 +42,6 @@ type WorkspaceListResponse struct {
 	Limit      int         `json:"limit"`
 }
 
-func ListWorkspaces(apiKey string, organizationId string, limit int, offset int, sorts []string, workspaceIds []string) (*WorkspaceListResponse, error) {
-	//TODO Validate limit, offset
-	request, _ := http.NewRequest("GET", urlBase+organizationId+"/workspaces", nil)
-	decoded := new(WorkspaceListResponse)
-
-	err := getObjectFromApi(apiKey, request, &decoded)
-	if err != nil {
-		return nil, fmt.Errorf("Error: %s", err)
-	}
-	return decoded, nil
-}
-
 func CreateWorkspace(apiKey string, organizationId string, createRequest *WorkspaceCreateRequest) (*Workspace, error) {
 	b, err := json.Marshal(createRequest)
 	if err != nil {
@@ -76,7 +64,7 @@ func DeleteWorkspace(apiKey string, organizationId string, workspaceId string) e
 	_, err := client.Do(request)
 
 	if err != nil {
-		return fmt.Errorf("Error: %s", err) //TODO improve error handling
+		return fmt.Errorf("Error: %s", err)
 	}
 	return nil
 }
@@ -96,7 +84,7 @@ func GetWorkspace(apiKey string, organizationId string, workspaceId string) (*Wo
 	decoded := new(Workspace)
 	json.NewDecoder(http_resp.Body).Decode(&decoded)
 
-	if decoded.Message != "" { //TODO improve error handling
+	if decoded.Message != "" {
 		return nil, fmt.Errorf("%s", decoded.Message)
 	}
 	return decoded, nil
@@ -109,7 +97,7 @@ func UpdateWorkspace(apiKey string, organizationId string, workspaceId string, u
 	}
 	b, err := json.Marshal(updateRequest)
 	if err != nil {
-		return nil, fmt.Errorf("Error: %s", err) //TODO improve error handling
+		return nil, fmt.Errorf("Error: %s", err)
 	}
 
 	request, _ := http.NewRequest("POST", urlBase+organizationId+"/workspaces/"+workspaceId, bytes.NewBuffer(b))

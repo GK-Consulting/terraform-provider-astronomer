@@ -38,19 +38,19 @@ func (d *WorkspaceDataSource) Schema(ctx context.Context, req datasource.SchemaR
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Workspace Identifier",
+				MarkdownDescription: "The Workspace's identifier.",
 				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name",
+				MarkdownDescription: "The Workspace's name",
 				Computed:            true,
 			},
 			"cicd_enforced_default": schema.BoolAttribute{
-				MarkdownDescription: "CI CD default",
+				MarkdownDescription: "Whether new Deployments enforce CI/CD deploys by default.",
 				Computed:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Description of Workspace",
+				MarkdownDescription: "The Workspace's description",
 				Computed:            true,
 			},
 		},

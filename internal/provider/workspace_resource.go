@@ -44,22 +44,22 @@ func (r *WorkspaceResource) Schema(ctx context.Context, req resource.SchemaReque
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Workspace Identifier",
+				MarkdownDescription: "The Workspace's identifier",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name",
+				MarkdownDescription: "The Workspace's name.",
 				Required:            true,
 			},
 			"cicd_enforced_default": schema.BoolAttribute{
-				MarkdownDescription: "CI CD default",
+				MarkdownDescription: "Whether new Deployments enforce CI/CD deploys by default.",
 				Optional:            true,
 			},
 			"description": schema.StringAttribute{
-				MarkdownDescription: "Description of Workspace",
+				MarkdownDescription: "The Workspace's description.",
 				Optional:            true,
 			},
 		},
