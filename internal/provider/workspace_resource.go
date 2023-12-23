@@ -90,7 +90,6 @@ func (r *WorkspaceResource) Configure(ctx context.Context, req resource.Configur
 func (r *WorkspaceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data WorkspaceResourceModel
 
-	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -172,7 +171,6 @@ func (r *WorkspaceResource) Delete(ctx context.Context, req resource.DeleteReque
 	}
 }
 
-// TODO figure out what this does
 func (r *WorkspaceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
