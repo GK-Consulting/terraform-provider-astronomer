@@ -31,6 +31,10 @@ jobs:
           cache: true
       - run: go mod download
       - run: go build -v .
+      - uses: actions/upload-artifact@master
+        with:
+          name: binary-artifact
+          path: ./terraform-provider-astronomer
       # - name: Run linters
       #   uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
       #   with:
@@ -76,6 +80,10 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
+      - uses: actions/download-artifact@master
+        with:
+          name: binary-artifact
+          path: ./terraform-provider-astronomer
       - run: go mod download && go install
       - run: echo 'provider_installation { dev_overrides { "registry.terraform.io/gk-consulting/astronomer" = "./" } direct {} }' > ~/.terraformrc \
               && cat ~/.terraformrc \
