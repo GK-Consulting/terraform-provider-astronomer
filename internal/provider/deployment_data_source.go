@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -18,7 +17,6 @@ func NewDeploymentDataSource() datasource.DataSource {
 }
 
 type DeploymentDataSource struct {
-	client         *http.Client
 	token          string
 	organizationId string
 }
@@ -112,7 +110,7 @@ func (d *DeploymentDataSource) Read(ctx context.Context, req datasource.ReadRequ
 	decoded, err := api.GetDeployment(d.token, d.organizationId, data.Id.ValueString())
 
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf(err.Error()))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("ERROR: %s", err.Error()))
 		return
 	}
 
