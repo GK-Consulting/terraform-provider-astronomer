@@ -86,23 +86,11 @@ jobs:
           path: ./terraform-provider-astronomer
       - run: go mod download && go install
       - run: ls -lah
-      - run: |
-          cat <<-EOF
-            provider_installation {
-              dev_overrides {
-                "registry.terraform.io/gk-consulting/astronomer" = "./"
-              }
-              direct {}
-            }
-            EOF > .terraformrc
-      - run: ls -lah
       - run: cat .terraformrc
-      # - run: echo 'provider_installation { dev_overrides { "registry.terraform.io/gk-consulting/astronomer" = "./" } direct {} }' > ~/.terraformrc \
-      #         && cat ~/.terraformrc \
-      #         && ls -lah
       - env:
           TF_ACC: "1"
           ASTRONOMER_API_TOKEN: "${{ secrets.ASTRONOMER_API_TOKEN }}"
           ORGANIZATION_ID: "${{ secrets.ORGANIZATION_ID }}"
+          TF_CLI_CONFIG_FILE: ".terraformrc"
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
