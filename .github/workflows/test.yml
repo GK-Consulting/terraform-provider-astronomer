@@ -31,7 +31,6 @@ jobs:
           cache: true
       - run: go mod download
       - run: go build -v .
-      - uses: valeriangalliat/action-sshd-cloudflared@v1
       # - name: Run linters
       #   uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
       #   with:
@@ -78,10 +77,18 @@ jobs:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - run: go mod download && go install
+      - run: |
+          /bin/cat > ~/.terraformrc <<EOF
+provider_installation {
+  dev_overrides {
+    "registry.terraform.io/gk-consulting/astronomer" = "~/go/bin/"
+  }
+direct {}
+}
+EOF
       - env:
           TF_ACC: "1"
           ASTRONOMER_API_TOKEN: "${{ secrets.ASTRONOMER_API_TOKEN }}"
           ORGANIZATION_ID: "${{ secrets.ORGANIZATION_ID }}"
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
-      - uses: valeriangalliat/action-sshd-cloudflared@v1
