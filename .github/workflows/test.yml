@@ -78,7 +78,8 @@ jobs:
           terraform_wrapper: false
       - run: go mod download && go install
       - run: echo 'provider_installation { dev_overrides { "registry.terraform.io/gk-consulting/astronomer" = "./" } direct {} }' > ~/.terraformrc \
-              && cat ~/.terraformrc
+              && cat ~/.terraformrc \
+              && ls -lah
       - env:
           TF_ACC: "1"
           ASTRONOMER_API_TOKEN: "${{ secrets.ASTRONOMER_API_TOKEN }}"
