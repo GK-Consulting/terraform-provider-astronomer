@@ -89,7 +89,7 @@ func (d *WorkspaceDataSource) Read(ctx context.Context, req datasource.ReadReque
 	decoded, err := api.GetWorkspace(d.token, d.organizationId, data.Id.ValueString())
 
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf(err.Error()))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("ERROR: %s", err.Error()))
 		return
 	}
 

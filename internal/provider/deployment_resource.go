@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 	"time"
 
@@ -25,7 +24,6 @@ func NewDeploymentResource() resource.Resource {
 }
 
 type DeploymentResource struct {
-	client         *http.Client
 	token          string
 	organizationId string
 }
@@ -240,7 +238,7 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	for deployResponse.Status != api.DeploymentStatusHealthy {
-		deployResponse, err = api.GetDeployment(r.token, r.organizationId, deployResponse.Id)
+		deployResponse, _ = api.GetDeployment(r.token, r.organizationId, deployResponse.Id)
 		time.Sleep(1 * time.Second)
 	}
 
