@@ -35,10 +35,10 @@ jobs:
         with:
           name: binary-artifact
           path: ./terraform-provider-astronomer
-      # - name: Run linters
-      #   uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
-      #   with:
-      #     version: latest
+      - name: Run linters
+        uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
+        with:
+          version: latest
 
   # generate:
   #   runs-on: ubuntu-latest
