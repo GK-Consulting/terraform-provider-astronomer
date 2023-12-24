@@ -76,7 +76,7 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - run: go mod download
+      - run: go mod download && go install
       - env:
           TF_ACC: "1"
           ASTRONOMER_API_TOKEN: "${{ secrets.ASTRONOMER_API_TOKEN }}"
