@@ -87,15 +87,16 @@ jobs:
       - run: go mod download && go install
       - run: ls -lah
       - run: |
-          cat <<EOF
+          cat <<-EOF
             provider_installation {
               dev_overrides {
-                "github" = "/home/isaac/go/bin/"
                 "registry.terraform.io/gk-consulting/astronomer" = "./"
               }
               direct {}
             }
             EOF > .terraformrc
+      - run: ls -lah
+      - run: cat .terraformrc
       # - run: echo 'provider_installation { dev_overrides { "registry.terraform.io/gk-consulting/astronomer" = "./" } direct {} }' > ~/.terraformrc \
       #         && cat ~/.terraformrc \
       #         && ls -lah
