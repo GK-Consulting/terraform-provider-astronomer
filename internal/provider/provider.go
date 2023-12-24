@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var _ provider.Provider = &AstronomerProvider{}
@@ -61,16 +62,20 @@ func (p *AstronomerProvider) Configure(ctx context.Context, req provider.Configu
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	if data.Token.IsNull() {
 		data.Token = types.StringValue(os.Getenv("ASTRONOMER_API_TOKEN"))
 	}
 
 	if data.Token.ValueString() == "" {
-		panic("No api key provided - either via provider configuration or environment variable.")
+		tflog.Error(ctx, "No api key provided - either via provider configuration or ASTRONOMER_API_TOKEN environment variable.")
+		resp.Diagnostics.AddError(
+			"API Key Not Found",
+			"No api key provided - either via provider configuration or ASTRONOMER_API_TOKEN environment variable.",
+		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	dataSourceModel := new(AstronomerProviderDataSourceDataModel)
