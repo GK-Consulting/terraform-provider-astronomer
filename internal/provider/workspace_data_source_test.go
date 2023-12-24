@@ -27,6 +27,7 @@ func TestWorkspaceDataSource(t *testing.T) {
 
 func testWorkspaceDataSourceConfig(workspaceName string) string {
 	orgId := os.Getenv("ORGANIZATION_ID")
+	// NOTE: No "required_providers" block here because we just want the tests to run against some locally-built binary
 	return fmt.Sprintf(`
 provider "astronomer" {
 	organization_id = %[1]q
