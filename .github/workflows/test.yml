@@ -89,8 +89,7 @@ jobs:
           name: binary-artifact
           path: ./terraform-provider-astronomer
       - run: go mod download && go install
-      - run: ls -lah
-      - run: cat .terraformrc
+      - run: ls -lah # show current directory (looking for binary)
       - env:
           TF_ACC: "1"
           ASTRONOMER_API_TOKEN: "${{ secrets.ASTRONOMER_API_TOKEN }}"
