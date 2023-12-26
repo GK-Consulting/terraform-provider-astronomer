@@ -143,7 +143,7 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 							Required: true,
 						},
 						"id": schema.StringAttribute{
-							Optional: true,
+							Computed: true,
 						},
 						"is_default": schema.BoolAttribute{
 							Required: true,
@@ -213,15 +213,15 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 		CloudProvider:        data.CloudProvider.ValueString(),
 		DefaultTaskPodCpu:    data.DefaultTaskPodCpu.ValueString(),
 		DefaultTaskPodMemory: data.DefaultTaskPodMemory.ValueString(),
-		// Description: data.Description,
-		Executor:            data.Executor.ValueString(),
-		IsCicdEnforced:      data.IsCicdEnforced.ValueBool(),
-		IsDagDeployEnabled:  data.IsDagDeployEnforced.ValueBool(),
-		IsHighAvailability:  data.IsHighAvailability.ValueBool(),
-		Name:                data.Name.ValueString(),
-		Region:              data.Region.ValueString(),
-		ResourceQuotaCpu:    data.ResourceQuotaCpu.ValueString(),
-		ResourceQuotaMemory: data.ResourceQuotaMemory.ValueString(),
+		Description:          data.Description.ValueString(),
+		Executor:             data.Executor.ValueString(),
+		IsCicdEnforced:       data.IsCicdEnforced.ValueBool(),
+		IsDagDeployEnabled:   data.IsDagDeployEnforced.ValueBool(),
+		IsHighAvailability:   data.IsHighAvailability.ValueBool(),
+		Name:                 data.Name.ValueString(),
+		Region:               data.Region.ValueString(),
+		ResourceQuotaCpu:     data.ResourceQuotaCpu.ValueString(),
+		ResourceQuotaMemory:  data.ResourceQuotaMemory.ValueString(),
 		// Scheduler: data.Sch,
 		SchedulerSize: data.SchedulerSize.ValueString(),
 		// TaskPodNodePoolId: data.Task,
@@ -259,6 +259,8 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	// data.TenantId
 	data.Type = types.StringValue(deployResponse.Type)
 	// data.VpcSubnetRange
+	workerQueuesDeployment := loadWorkerQueuesFromResponse(deployResponse)
+	data.WorkerQueues = workerQueuesDeployment
 	data.WorkspaceId = types.StringValue(deployResponse.WorkspaceId)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -269,6 +271,7 @@ func loadWorkerQueuesFromTFState(data DeploymentResourceModel) []api.WorkerQueue
 	for _, value := range data.WorkerQueues {
 		workerQueues = append(workerQueues, api.WorkerQueue{
 			AstroMachine:      value.AstroMachine.ValueString(),
+			Id:                value.Id.ValueString(),
 			IsDefault:         value.IsDefault.ValueBool(),
 			MaxWorkerCount:    int(value.MaxWorkerCount.ValueInt64()),
 			MinWorkerCount:    int(value.MinWorkerCount.ValueInt64()),
@@ -290,8 +293,17 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
+	// data.AstroRuntimeVersion = types.StringValue(deployment.Astro)
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployment.CloudProvider))
 	data.Id = types.StringValue(deployment.Id)
+	data.DefaultTaskPodCpu = types.StringValue(deployment.DefaultTaskPodCpu)
+	data.DefaultTaskPodMemory = types.StringValue(deployment.DefaultTaskPodMemory)
+	data.Description = types.StringValue(deployment.Description)
+	data.Executor = types.StringValue(deployment.Executor)
+	data.IsCicdEnforced = types.BoolValue(deployment.IsCicdEnforced)
+	data.IsDagDeployEnforced = types.BoolValue(deployment.IsDagDeployEnabled) //TODO check names on this
+	data.IsHighAvailability = types.BoolValue(deployment.IsHighAvailability)
+
 	// data.DbInstanceType = types.StringValue(deployResponse.CloudProvider)
 	// data.IsLimited
 	// data.Metadata
@@ -300,6 +312,13 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
 	data.Region = types.StringValue(deployment.Region)
+	data.ResourceQuotaCpu = types.StringValue(deployment.ResourceQuotaCpu)
+	data.ResourceQuotaMemory = types.StringValue(deployment.ResourceQuotaMemory)
+	data.SchedulerSize = types.StringValue(deployment.SchedulerSize)
+
+	workerQueues := loadWorkerQueuesFromResponse(deployment)
+	data.WorkerQueues = workerQueues
+
 	// data.ServicePeeringRange
 	// data.ServiceSubnetRange
 	// data.Tags
@@ -314,6 +333,22 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func loadWorkerQueuesFromResponse(deployment *api.DeploymentResponse) []WorkerQueueModel {
+	var workerQueues []WorkerQueueModel
+	for _, value := range deployment.WorkerQueues {
+		workerQueues = append(workerQueues, WorkerQueueModel{
+			AstroMachine:      types.StringValue(value.AstroMachine),
+			Id:                types.StringValue(value.Id),
+			IsDefault:         types.BoolValue(value.IsDefault),
+			MaxWorkerCount:    types.Int64Value(int64(value.MaxWorkerCount)),
+			MinWorkerCount:    types.Int64Value(int64(value.MinWorkerCount)),
+			Name:              types.StringValue(value.Name),
+			WorkerConcurrency: types.Int64Value(int64(value.WorkerConcurrency)),
+		})
+	}
+	return workerQueues
 }
 
 func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
