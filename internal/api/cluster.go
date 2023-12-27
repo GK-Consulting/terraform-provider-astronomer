@@ -34,7 +34,7 @@ type ClusterListResponse struct {
 
 type ClusterMetadataResponse struct {
 	ExternalIPs   []string `json:"externalIPs"`
-	OidcIssuerUrl []string `json:"oidcIssuerUrl"`
+	OidcIssuerUrl string   `json:"oidcIssuerUrl"`
 }
 
 type ClusterK8sTags struct {
