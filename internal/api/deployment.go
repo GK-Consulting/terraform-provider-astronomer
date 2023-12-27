@@ -210,7 +210,7 @@ func CreateDeployment(apiKey string, organizationId string, createRequest *Deplo
 	return decoded, nil
 }
 
-func UpdateDeployment(apiKey string, organizationId string, deploymentId string, updateRequest *DeploymentUpdateRequest) (*Workspace, error) {
+func UpdateDeployment(apiKey string, organizationId string, deploymentId string, updateRequest *DeploymentUpdateRequest) (*DeploymentResponse, error) {
 	//TODO add validation etc here
 	//TODO consolidate marshalling code
 	if deploymentId == "" {
@@ -223,7 +223,7 @@ func UpdateDeployment(apiKey string, organizationId string, deploymentId string,
 
 	request, _ := http.NewRequest("POST", urlBase+organizationId+"/deployments/"+deploymentId, bytes.NewBuffer(b))
 
-	decoded := new(Workspace)
+	decoded := new(DeploymentResponse)
 	err = getObjectFromApi(apiKey, request, &decoded)
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)

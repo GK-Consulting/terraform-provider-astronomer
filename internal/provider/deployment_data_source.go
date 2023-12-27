@@ -96,6 +96,7 @@ func (d *DeploymentDataSource) Configure(ctx context.Context, req datasource.Con
 	}
 
 	d.token = provider.Token
+	d.organizationId = provider.OrganizationId
 }
 
 func (d *DeploymentDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
