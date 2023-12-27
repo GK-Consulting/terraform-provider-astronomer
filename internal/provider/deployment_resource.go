@@ -266,22 +266,6 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func loadWorkerQueuesFromTFState(data DeploymentResourceModel) []api.WorkerQueue {
-	var workerQueues []api.WorkerQueue
-	for _, value := range data.WorkerQueues {
-		workerQueues = append(workerQueues, api.WorkerQueue{
-			AstroMachine:      value.AstroMachine.ValueString(),
-			Id:                value.Id.ValueString(),
-			IsDefault:         value.IsDefault.ValueBool(),
-			MaxWorkerCount:    int(value.MaxWorkerCount.ValueInt64()),
-			MinWorkerCount:    int(value.MinWorkerCount.ValueInt64()),
-			Name:              value.Name.ValueString(),
-			WorkerConcurrency: int(value.WorkerConcurrency.ValueInt64()),
-		})
-	}
-	return workerQueues
-}
-
 func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data DeploymentResourceModel
 
@@ -333,6 +317,22 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func loadWorkerQueuesFromTFState(data DeploymentResourceModel) []api.WorkerQueue {
+	var workerQueues []api.WorkerQueue
+	for _, value := range data.WorkerQueues {
+		workerQueues = append(workerQueues, api.WorkerQueue{
+			AstroMachine:      value.AstroMachine.ValueString(),
+			Id:                value.Id.ValueString(),
+			IsDefault:         value.IsDefault.ValueBool(),
+			MaxWorkerCount:    int(value.MaxWorkerCount.ValueInt64()),
+			MinWorkerCount:    int(value.MinWorkerCount.ValueInt64()),
+			Name:              value.Name.ValueString(),
+			WorkerConcurrency: int(value.WorkerConcurrency.ValueInt64()),
+		})
+	}
+	return workerQueues
 }
 
 func loadWorkerQueuesFromResponse(deployment *api.DeploymentResponse) []WorkerQueueModel {
@@ -388,6 +388,8 @@ func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
 		return
 	}
+
+	data.WorkerQueues = loadWorkerQueuesFromResponse(deployResponse)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
