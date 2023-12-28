@@ -285,7 +285,7 @@ func createNodePoolTFStateFromRequest(pools []api.NodePoolResponse) []ClusterNod
 }
 
 func createStringListFromTFState(stringList []types.String) []string {
-	var strings []string
+	var strings []string = []string{}
 	for _, value := range stringList {
 		strings = append(strings, value.ValueString())
 	}
@@ -293,7 +293,7 @@ func createStringListFromTFState(stringList []types.String) []string {
 }
 
 func createTFStringListFromStrings(stringList []string) []types.String {
-	var strings []types.String
+	var strings []types.String = []types.String{}
 	for _, value := range stringList {
 		strings = append(strings, types.StringValue(value))
 	}
@@ -439,6 +439,12 @@ func (r *ClusterResource) Update(ctx context.Context, req resource.UpdateRequest
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
 		return
 	}
+
+	for clusterResponse.Status != api.ClusterStatusCreated {
+		clusterResponse, _ = api.GetCluster(r.token, r.organizationId, clusterResponse.Id)
+		time.Sleep(1 * time.Second)
+	}
+
 	data.DbInstanceType = types.StringValue(clusterResponse.DbInstanceType)
 	data.K8sTags = createK8sTagTFStateFromRequest(clusterResponse.Tags)
 	data.Name = types.StringValue(clusterResponse.Name)

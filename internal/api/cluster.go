@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -139,14 +138,12 @@ func CreateCluster(apiKey string, organizationId string, createRequest *ClusterC
 
 func UpdateCluster(apiKey string, organizationId string, clusterId string, updateRequest *ClusterUpdateRequest) (*ClusterResponse, error) {
 	b, err := json.Marshal(updateRequest)
-	log.Println("UpdateCluster: %s", string(b))
-	// panic(nil)
-
 	if err != nil {
 		return nil, fmt.Errorf("%s", err)
 	}
 
 	request, _ := http.NewRequest("POST", urlBase+organizationId+"/clusters/"+clusterId, bytes.NewBuffer(b))
+	request.Header.Set("Content-Type", "application/json")
 	decoded := new(ClusterResponse)
 
 	err = getObjectFromApi(apiKey, request, &decoded)

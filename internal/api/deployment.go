@@ -214,7 +214,7 @@ func UpdateDeployment(apiKey string, organizationId string, deploymentId string,
 	//TODO add validation etc here
 	//TODO consolidate marshalling code
 	if deploymentId == "" {
-		return nil, fmt.Errorf("No Workspace ID Given.")
+		return nil, fmt.Errorf("No Deployment ID Given.")
 	}
 	b, err := json.Marshal(updateRequest)
 	if err != nil {
@@ -222,6 +222,7 @@ func UpdateDeployment(apiKey string, organizationId string, deploymentId string,
 	}
 
 	request, _ := http.NewRequest("POST", urlBase+organizationId+"/deployments/"+deploymentId, bytes.NewBuffer(b))
+	request.Header.Set("Content-Type", "application/json")
 
 	decoded := new(DeploymentResponse)
 	err = getObjectFromApi(apiKey, request, &decoded)
