@@ -204,7 +204,7 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	data.BillingEmail = types.StringValue(decoded.BillingEmail)
-	// data.CreatedAt = types.StringValue(decoded.CreatedAt)
+	data.CreatedAt = types.StringValue(decoded.CreatedAt)
 	// data.CreatedBy = types.Object
 	data.ID = types.StringValue(decoded.ID)
 	data.IsScimEnabled = types.BoolValue(decoded.IsScimEnabled)
