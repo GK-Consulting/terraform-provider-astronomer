@@ -24,21 +24,21 @@ type OrgDataSource struct {
 type OrgDataSourceModel struct {
 	BillingEmail types.String `tfsdk:"billing_email"`
 	CreatedAt    types.String `tfsdk:"created_at"`
-	// CreatedBy      BasicSubjectProfile `tfsdk:"created_by"`
-	ID             types.String    `tfsdk:"id"`
-	IsScimEnabled  types.Bool      `tfsdk:"is_scim_enabled"`
-	ManagedDomains []ManagedDomain `tfsdk:"managed_domains"`
-	Name           types.String    `tfsdk:"name"`
-	PaymentMethod  types.String    `tfsdk:"payment_method"`
-	Product        types.String    `tfsdk:"product"`
-	Status         types.String    `tfsdk:"status"`
-	SupportPlan    types.String    `tfsdk:"support_plan"`
-	TrialExpiresAt types.String    `tfsdk:"trial_expires_at"`
-	UpdatedAt      types.String    `tfsdk:"updated_at"`
-	// UpdatedBy      BasicSubjectProfile `tfsdk:"updated_by"`
+	// CreatedBy      BasicSubjectProfileModel `tfsdk:"created_by"`
+	ID             types.String         `tfsdk:"id"`
+	IsScimEnabled  types.Bool           `tfsdk:"is_scim_enabled"`
+	ManagedDomains []ManagedDomainModel `tfsdk:"managed_domains"`
+	Name           types.String         `tfsdk:"name"`
+	PaymentMethod  types.String         `tfsdk:"payment_method"`
+	Product        types.String         `tfsdk:"product"`
+	Status         types.String         `tfsdk:"status"`
+	SupportPlan    types.String         `tfsdk:"support_plan"`
+	TrialExpiresAt types.String         `tfsdk:"trial_expires_at"`
+	UpdatedAt      types.String         `tfsdk:"updated_at"`
+	// UpdatedBy      BasicSubjectProfileModel `tfsdk:"updated_by"`
 }
 
-type BasicSubjectProfile struct {
+type BasicSubjectProfileModel struct {
 	APITokenName types.String `tfsdk:"api_token_name"`
 	AvatarUrl    types.String `tfsdk:"avatar_url"`
 	FullName     types.String `tfsdk:"full_name"`
@@ -47,7 +47,7 @@ type BasicSubjectProfile struct {
 	Username     types.String `tfsdk:"username"`
 }
 
-type ManagedDomain struct {
+type ManagedDomainModel struct {
 	CreatedAt      types.String   `tfsdk:"created_at"`
 	EnforcedLogins []types.String `tfsdk:"enforced_logins"`
 	ID             types.String   `tfsdk:"id"`
@@ -208,7 +208,7 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	// data.CreatedBy = types.Object
 	data.ID = types.StringValue(decoded.ID)
 	data.IsScimEnabled = types.BoolValue(decoded.IsScimEnabled)
-	// data.ManagedDomains = types.ListValue(decoded.ManagedDomains)
+	data.ManagedDomains = loadManagedDomainsFromResponse(decoded)
 	data.Name = types.StringValue(decoded.Name)
 	data.PaymentMethod = types.StringValue(decoded.PaymentMethod)
 	data.Product = types.StringValue(decoded.Product)
@@ -219,4 +219,28 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	// UpdatedBy      BasicSubjectProfile `tfsdk:"updated_by"`
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func loadManagedDomainsFromResponse(org *api.OrgResponse) []ManagedDomainModel {
+	var managedDomains []ManagedDomainModel
+	for _, value := range org.ManagedDomains {
+		managedDomains = append(managedDomains, ManagedDomainModel{
+			CreatedAt:      types.StringValue(value.CreatedAt),
+			EnforcedLogins: loadEnforcedLoginsFromValues(value.EnforcedLogins),
+			ID:             types.StringValue(value.ID),
+			Name:           types.StringValue(value.Name),
+			Status:         types.StringValue(value.Status),
+			UpdatedAt:      types.StringValue(value.UpdatedAt),
+		})
+	}
+	return managedDomains
+}
+
+func loadEnforcedLoginsFromValues(values []string) []types.String {
+	var enforcedLogins []types.String = []types.String{}
+	for _, value := range values {
+		enforcedLogins = append(enforcedLogins, types.StringValue(value))
+	}
+
+	return enforcedLogins
 }
