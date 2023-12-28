@@ -85,6 +85,6 @@ Required:
 - `name` (String)
 - `worker_concurrency` (Number)
 
-Optional:
+Read-Only:
 
 - `id` (String)

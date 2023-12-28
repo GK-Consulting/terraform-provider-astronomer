@@ -93,6 +93,7 @@ func (p *AstronomerProvider) Configure(ctx context.Context, req provider.Configu
 
 func (p *AstronomerProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewClusterResource,
 		NewDeploymentResource,
 		NewWorkspaceResource,
 	}
@@ -102,6 +103,7 @@ func (p *AstronomerProvider) DataSources(ctx context.Context) []func() datasourc
 	return []func() datasource.DataSource{
 		NewWorkspaceDataSource,
 		// NewOrganizationDataSource,
+		NewClusterDataSource,
 		NewDeploymentDataSource,
 	}
 }

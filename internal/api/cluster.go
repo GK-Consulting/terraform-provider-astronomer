@@ -34,7 +34,7 @@ type ClusterListResponse struct {
 
 type ClusterMetadataResponse struct {
 	ExternalIPs   []string `json:"externalIPs"`
-	OidcIssuerUrl []string `json:"oidcIssuerUrl"`
+	OidcIssuerUrl string   `json:"oidcIssuerUrl"`
 }
 
 type ClusterK8sTags struct {
@@ -143,6 +143,7 @@ func UpdateCluster(apiKey string, organizationId string, clusterId string, updat
 	}
 
 	request, _ := http.NewRequest("POST", urlBase+organizationId+"/clusters/"+clusterId, bytes.NewBuffer(b))
+	request.Header.Set("Content-Type", "application/json")
 	decoded := new(ClusterResponse)
 
 	err = getObjectFromApi(apiKey, request, &decoded)
