@@ -17,7 +17,7 @@ type OrgResponse struct {
 	CreatedAt      string              `json:"createdAt"`
 	CreatedBy      BasicSubjectProfile `json:"createdBy"`
 	ID             string              `json:"id"`
-	IsScumEnabled  bool                `json:"isScimEnabled"`
+	IsScimEnabled  bool                `json:"isScimEnabled"`
 	ManagedDomains []ManagedDomain     `json:"managedDomains"`
 	Name           string              `json:"name"`
 	PaymentMethod  string              `json:"paymentMethod"`
@@ -35,7 +35,7 @@ type BasicSubjectProfile struct {
 	FullName     string `json:"fullName"`
 	ID           string `json:"id"`
 	SubjectType  string `json:"subjectType"`
-	Username     string `json:"Username"`
+	Username     string `json:"username"`
 }
 
 type ManagedDomain struct {
