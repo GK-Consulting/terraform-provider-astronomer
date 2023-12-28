@@ -105,6 +105,7 @@ func (p *AstronomerProvider) DataSources(ctx context.Context) []func() datasourc
 		// NewOrganizationDataSource,
 		NewClusterDataSource,
 		NewDeploymentDataSource,
+		NewOrgDataSource,
 	}
 }
 
