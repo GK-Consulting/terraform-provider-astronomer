@@ -25,7 +25,7 @@ type OrgDataSourceModel struct {
 	BillingEmail types.String `tfsdk:"billing_email"`
 	CreatedAt    types.String `tfsdk:"created_at"`
 	// CreatedBy      BasicSubjectProfileModel `tfsdk:"created_by"`
-	ID             types.String         `tfsdk:"id"`
+	Id             types.String         `tfsdk:"id"`
 	IsScimEnabled  types.Bool           `tfsdk:"is_scim_enabled"`
 	ManagedDomains []ManagedDomainModel `tfsdk:"managed_domains"`
 	Name           types.String         `tfsdk:"name"`
@@ -42,7 +42,7 @@ type BasicSubjectProfileModel struct {
 	APITokenName types.String `tfsdk:"api_token_name"`
 	AvatarUrl    types.String `tfsdk:"avatar_url"`
 	FullName     types.String `tfsdk:"full_name"`
-	ID           types.String `tfsdk:"id"`
+	Id           types.String `tfsdk:"id"`
 	SubjectType  types.String `tfsdk:"subject_type"`
 	Username     types.String `tfsdk:"username"`
 }
@@ -50,7 +50,7 @@ type BasicSubjectProfileModel struct {
 type ManagedDomainModel struct {
 	CreatedAt      types.String   `tfsdk:"created_at"`
 	EnforcedLogins []types.String `tfsdk:"enforced_logins"`
-	ID             types.String   `tfsdk:"id"`
+	Id             types.String   `tfsdk:"id"`
 	Name           types.String   `tfsdk:"name"`
 	Status         types.String   `tfsdk:"status"`
 	UpdatedAt      types.String   `tfsdk:"updated_at"`
@@ -206,7 +206,7 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	data.BillingEmail = types.StringValue(decoded.BillingEmail)
 	data.CreatedAt = types.StringValue(decoded.CreatedAt)
 	// data.CreatedBy = types.Object
-	data.ID = types.StringValue(decoded.ID)
+	data.Id = types.StringValue(decoded.Id)
 	data.IsScimEnabled = types.BoolValue(decoded.IsScimEnabled)
 	data.ManagedDomains = loadManagedDomainsFromResponse(decoded)
 	data.Name = types.StringValue(decoded.Name)
@@ -227,7 +227,7 @@ func loadManagedDomainsFromResponse(org *api.OrgResponse) []ManagedDomainModel {
 		managedDomains = append(managedDomains, ManagedDomainModel{
 			CreatedAt:      types.StringValue(value.CreatedAt),
 			EnforcedLogins: loadEnforcedLoginsFromValues(value.EnforcedLogins),
-			ID:             types.StringValue(value.ID),
+			Id:             types.StringValue(value.Id),
 			Name:           types.StringValue(value.Name),
 			Status:         types.StringValue(value.Status),
 			UpdatedAt:      types.StringValue(value.UpdatedAt),

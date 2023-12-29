@@ -16,7 +16,7 @@ type OrgResponse struct {
 	BillingEmail   string                      `json:"billingEmail"`
 	CreatedAt      string                      `json:"createdAt"`
 	CreatedBy      BasicSubjectProfileResponse `json:"createdBy"`
-	ID             string                      `json:"id"`
+	Id             string                      `json:"id"`
 	IsScimEnabled  bool                        `json:"isScimEnabled"`
 	ManagedDomains []ManagedDomainResponse     `json:"managedDomains"`
 	Name           string                      `json:"name"`
@@ -33,7 +33,7 @@ type BasicSubjectProfileResponse struct {
 	APITokenName string `json:"apiTokenName"`
 	AvatarUrl    string `json:"avatarUrl"`
 	FullName     string `json:"fullName"`
-	ID           string `json:"id"`
+	Id           string `json:"id"`
 	SubjectType  string `json:"subjectType"`
 	Username     string `json:"username"`
 }
@@ -41,7 +41,7 @@ type BasicSubjectProfileResponse struct {
 type ManagedDomainResponse struct {
 	CreatedAt      string   `json:"createdAt"`
 	EnforcedLogins []string `json:"enforcedLogins"`
-	ID             string   `json:"id"`
+	Id             string   `json:"id"`
 	Name           string   `json:"name"`
 	Status         string   `json:"status"`
 	UpdatedAt      string   `json:"updatedAt"`
