@@ -281,7 +281,9 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 
 	// TODO fill out the rest
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployResponse.CloudProvider))
-	data.ClusterId = types.StringValue(deployResponse.ClusterId)
+	if data.ClusterId.ValueString() != "" {
+		data.ClusterId = types.StringValue(deployResponse.ClusterId)
+	}
 	// data.DbInstanceType = types.StringValue(deployResponse.CloudProvider)
 	data.Id = types.StringValue(deployResponse.Id)
 	// data.IsLimited
@@ -320,7 +322,9 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	// data.AstroRuntimeVersion = types.StringValue(deployment.Astro)
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployment.CloudProvider))
-	data.ClusterId = types.StringValue(deployment.ClusterId)
+	if data.ClusterId.ValueString() != "" {
+		data.ClusterId = types.StringValue(deployment.ClusterId)
+	}
 	data.Id = types.StringValue(deployment.Id)
 	data.DefaultTaskPodCpu = types.StringValue(deployment.DefaultTaskPodCpu)
 	data.DefaultTaskPodMemory = types.StringValue(deployment.DefaultTaskPodMemory)
