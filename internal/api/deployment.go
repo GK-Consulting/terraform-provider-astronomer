@@ -127,7 +127,7 @@ type SchedulerRequest struct {
 type DeploymentCreateRequest struct {
 	AstroRuntimeVersion  string           `json:"astroRuntimeVersion"`
 	ClusterId            string           `json:"clusterId,omitempty"`
-	CloudProvider        string           `json:"cloudProvider"`
+	CloudProvider        string           `json:"cloudProvider,omitempty"`
 	DefaultTaskPodCpu    string           `json:"defaultTaskPodCpu"`
 	DefaultTaskPodMemory string           `json:"defaultTaskPodMemory"`
 	Description          string           `json:"description"`
@@ -136,7 +136,7 @@ type DeploymentCreateRequest struct {
 	IsDagDeployEnabled   bool             `json:"isDagDeployEnabled"`
 	IsHighAvailability   bool             `json:"isHighAvailability"`
 	Name                 string           `json:"name"`
-	Region               string           `json:"region"`
+	Region               string           `json:"region,omitempty"`
 	ResourceQuotaCpu     string           `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory  string           `json:"resourceQuotaMemory"`
 	Scheduler            SchedulerRequest `json:"scheduler	"`

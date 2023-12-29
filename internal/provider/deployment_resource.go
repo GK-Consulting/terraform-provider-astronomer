@@ -79,6 +79,7 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 			"cloud_provider": schema.StringAttribute{
 				MarkdownDescription: "The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.",
+				Computed:            true,
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -132,7 +133,7 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 			"region": schema.StringAttribute{
 				MarkdownDescription: "The region to host the Deployment in. Optional if `ClusterId` is specified.",
-				Required:            true,
+				Optional:            true,
 			},
 			"resource_quota_cpu": schema.StringAttribute{
 				MarkdownDescription: "The CPU quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current CPU usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in number of CPU cores.",
@@ -158,6 +159,9 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 						},
 						"id": schema.StringAttribute{
 							Computed: true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 						"is_default": schema.BoolAttribute{
 							Required: true,
@@ -182,6 +186,9 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"workload_identity": schema.StringAttribute{
 				MarkdownDescription: "The Deployment's workload identity.",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"workspace_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the workspace to which the Deployment belongs.",
@@ -283,7 +290,9 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	// data.Node = types.StringValue(deployResponse.Name)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
-	data.Region = types.StringValue(deployResponse.Region)
+	if data.Region.ValueString() != "" {
+		data.Region = types.StringValue(deployResponse.Region)
+	}
 	// data.ServicePeeringRange
 	// data.ServiceSubnetRange
 	// data.Tags
@@ -328,7 +337,9 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	// data.Node = types.StringValue(deployResponse.Name)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
-	data.Region = types.StringValue(deployment.Region)
+	if data.Region.ValueString() != "" {
+		data.Region = types.StringValue(deployment.Region)
+	}
 	data.ResourceQuotaCpu = types.StringValue(deployment.ResourceQuotaCpu)
 	data.ResourceQuotaMemory = types.StringValue(deployment.ResourceQuotaMemory)
 	data.SchedulerSize = types.StringValue(deployment.SchedulerSize)
