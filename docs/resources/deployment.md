@@ -3,12 +3,12 @@
 page_title: "astronomer_deployment Resource - terraform-provider-astronomer"
 subcategory: ""
 description: |-
-  Deployment resource
+  An Astro Deployment is an Airflow environment that is powered by all core Airflow components.
 ---
 
 # astronomer_deployment (Resource)
 
-Deployment resource
+An Astro Deployment is an Airflow environment that is powered by all core Airflow components.
 
 ## Example Usage
 
@@ -49,7 +49,6 @@ resource "astronomer_deployment" "standard_deployment" {
 ### Required
 
 - `astro_runtime_version` (String) Deployment's Astro Runtime version.
-- `cloud_provider` (String) The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.
 - `default_task_pod_cpu` (String) The default CPU resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in number of CPU cores.
 - `default_task_pod_memory` (String) The default memory resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in `Gi`. This value must always be twice the value of `DefaultTaskPodCpu`.
 - `executor` (String) The Deployment's executor type.
@@ -57,21 +56,24 @@ resource "astronomer_deployment" "standard_deployment" {
 - `is_dag_deploy_enforced` (Boolean) Whether the Deployment has DAG deploys enabled.
 - `is_high_availability` (Boolean) Whether the Deployment is configured for high availability. If `true`, multiple scheduler pods will be online.
 - `name` (String) The Deployment's name.
-- `region` (String) The region to host the Deployment in. Optional if `ClusterId` is specified.
 - `resource_quota_cpu` (String) The CPU quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current CPU usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in number of CPU cores.
 - `resource_quota_memory` (String) The memory quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current memory usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in `Gi`. This value must always be twice the value of `ResourceQuotaCpu`.
 - `scheduler_size` (String) The size of the scheduler pod.
 - `type` (String) The type of the Deployment.
-- `worker_queues` (Attributes List) The list of worker queues configured for the Deployment. Applies only when `Executor` is `CELERY`. At least 1 worker queue is needed. All Deployments need at least 1 worker queue called `default`. (see [below for nested schema](#nestedatt--worker_queues))
 - `workspace_id` (String) The ID of the workspace to which the Deployment belongs.
 
 ### Optional
 
+- `cloud_provider` (String) The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.
+- `cluster_id` (String) The ID of the cluster where the Deployment will be created.
 - `description` (String) The Deployment's description.
+- `region` (String) The region to host the Deployment in. Optional if `ClusterId` is specified.
+- `worker_queues` (Attributes List) The list of worker queues configured for the Deployment. Applies only when `Executor` is `CELERY`. At least 1 worker queue is needed. All Deployments need at least 1 worker queue called `default`. (see [below for nested schema](#nestedatt--worker_queues))
 
 ### Read-Only
 
 - `id` (String) The Deployment's identifier.
+- `workload_identity` (String) The Deployment's workload identity.
 
 <a id="nestedatt--worker_queues"></a>
 ### Nested Schema for `worker_queues`

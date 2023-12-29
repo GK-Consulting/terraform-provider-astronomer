@@ -31,6 +31,7 @@ type DeploymentResource struct {
 type DeploymentResourceModel struct {
 	AstroRuntimeVersion  types.String       `tfsdk:"astro_runtime_version"`
 	CloudProvider        types.String       `tfsdk:"cloud_provider"`
+	ClusterId            types.String       `tfsdk:"cluster_id"`
 	DefaultTaskPodCpu    types.String       `tfsdk:"default_task_pod_cpu"`
 	DefaultTaskPodMemory types.String       `tfsdk:"default_task_pod_memory"`
 	Description          types.String       `tfsdk:"description"`
@@ -46,6 +47,7 @@ type DeploymentResourceModel struct {
 	SchedulerSize        types.String       `tfsdk:"scheduler_size"`
 	Type                 types.String       `tfsdk:"type"`
 	WorkerQueues         []WorkerQueueModel `tfsdk:"worker_queues"`
+	WorkloadIdentity     types.String       `tfsdk:"workload_identity"`
 	WorkspaceId          types.String       `tfsdk:"workspace_id"`
 }
 
@@ -65,17 +67,30 @@ func (r *DeploymentResource) Metadata(ctx context.Context, req resource.Metadata
 
 func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Deployment resource",
+		MarkdownDescription: "An Astro Deployment is an Airflow environment that is powered by all core Airflow components.",
 
 		Attributes: map[string]schema.Attribute{
 			"astro_runtime_version": schema.StringAttribute{
 				MarkdownDescription: "Deployment's Astro Runtime version.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"cloud_provider": schema.StringAttribute{
 				MarkdownDescription: "The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.",
-				Required:            true,
+				Computed:            true,
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"cluster_id": schema.StringAttribute{
+				MarkdownDescription: "The ID of the cluster where the Deployment will be created.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "The Deployment's description.",
@@ -118,7 +133,7 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 			},
 			"region": schema.StringAttribute{
 				MarkdownDescription: "The region to host the Deployment in. Optional if `ClusterId` is specified.",
-				Required:            true,
+				Optional:            true,
 			},
 			"resource_quota_cpu": schema.StringAttribute{
 				MarkdownDescription: "The CPU quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current CPU usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in number of CPU cores.",
@@ -144,6 +159,9 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 						},
 						"id": schema.StringAttribute{
 							Computed: true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 						"is_default": schema.BoolAttribute{
 							Required: true,
@@ -163,7 +181,14 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 					},
 				},
 				MarkdownDescription: "The list of worker queues configured for the Deployment. Applies only when `Executor` is `CELERY`. At least 1 worker queue is needed. All Deployments need at least 1 worker queue called `default`.",
-				Required:            true,
+				Optional:            true,
+			},
+			"workload_identity": schema.StringAttribute{
+				MarkdownDescription: "The Deployment's workload identity.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"workspace_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the workspace to which the Deployment belongs.",
@@ -197,8 +222,20 @@ func (r *DeploymentResource) Configure(ctx context.Context, req resource.Configu
 func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data DeploymentResourceModel
 
-	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if data.CloudProvider.ValueString() == "" && data.ClusterId.ValueString() == "" {
+		resp.Diagnostics.AddError(
+			"Validation Error",
+			"cluster_id or cloud_provider must be specified",
+		)
+	}
+	if data.Executor.ValueString() == "CELERY" && len(data.WorkerQueues) == 0 {
+		resp.Diagnostics.AddError(
+			"Validation Error",
+			"Must provide at least one default worker queue when using CELERY executor.",
+		)
+	}
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -208,8 +245,8 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 
 	//TODO add remaining to model
 	deploymentCreateRequest := &api.DeploymentCreateRequest{
-		AstroRuntimeVersion: data.AstroRuntimeVersion.ValueString(),
-		// ClusterId: data.,
+		AstroRuntimeVersion:  data.AstroRuntimeVersion.ValueString(),
+		ClusterId:            data.ClusterId.ValueString(),
 		CloudProvider:        data.CloudProvider.ValueString(),
 		DefaultTaskPodCpu:    data.DefaultTaskPodCpu.ValueString(),
 		DefaultTaskPodMemory: data.DefaultTaskPodMemory.ValueString(),
@@ -244,6 +281,9 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 
 	// TODO fill out the rest
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployResponse.CloudProvider))
+	if data.ClusterId.ValueString() != "" {
+		data.ClusterId = types.StringValue(deployResponse.ClusterId)
+	}
 	// data.DbInstanceType = types.StringValue(deployResponse.CloudProvider)
 	data.Id = types.StringValue(deployResponse.Id)
 	// data.IsLimited
@@ -252,7 +292,9 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	// data.Node = types.StringValue(deployResponse.Name)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
-	data.Region = types.StringValue(deployResponse.Region)
+	if data.Region.ValueString() != "" {
+		data.Region = types.StringValue(deployResponse.Region)
+	}
 	// data.ServicePeeringRange
 	// data.ServiceSubnetRange
 	// data.Tags
@@ -261,6 +303,7 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	// data.VpcSubnetRange
 	workerQueuesDeployment := loadWorkerQueuesFromResponse(deployResponse)
 	data.WorkerQueues = workerQueuesDeployment
+	data.WorkloadIdentity = types.StringValue(deployResponse.WorkloadIdentity)
 	data.WorkspaceId = types.StringValue(deployResponse.WorkspaceId)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -279,6 +322,9 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	// data.AstroRuntimeVersion = types.StringValue(deployment.Astro)
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployment.CloudProvider))
+	if data.ClusterId.ValueString() != "" {
+		data.ClusterId = types.StringValue(deployment.ClusterId)
+	}
 	data.Id = types.StringValue(deployment.Id)
 	data.DefaultTaskPodCpu = types.StringValue(deployment.DefaultTaskPodCpu)
 	data.DefaultTaskPodMemory = types.StringValue(deployment.DefaultTaskPodMemory)
@@ -295,7 +341,9 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	// data.Node = types.StringValue(deployResponse.Name)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
-	data.Region = types.StringValue(deployment.Region)
+	if data.Region.ValueString() != "" || deployment.Region != "" {
+		data.Region = types.StringValue(deployment.Region)
+	}
 	data.ResourceQuotaCpu = types.StringValue(deployment.ResourceQuotaCpu)
 	data.ResourceQuotaMemory = types.StringValue(deployment.ResourceQuotaMemory)
 	data.SchedulerSize = types.StringValue(deployment.SchedulerSize)
@@ -309,6 +357,7 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	// data.TenantId
 	data.Type = types.StringValue(deployment.Type)
 	// data.VpcSubnetRange
+	data.WorkloadIdentity = types.StringValue(deployment.WorkloadIdentity)
 	data.WorkspaceId = types.StringValue(deployment.WorkspaceId)
 
 	if resp.Diagnostics.HasError() {
