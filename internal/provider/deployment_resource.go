@@ -341,7 +341,7 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	// data.Node = types.StringValue(deployResponse.Name)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
 	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
-	if data.Region.ValueString() != "" {
+	if data.Region.ValueString() != "" || deployment.Region != "" {
 		data.Region = types.StringValue(deployment.Region)
 	}
 	data.ResourceQuotaCpu = types.StringValue(deployment.ResourceQuotaCpu)
