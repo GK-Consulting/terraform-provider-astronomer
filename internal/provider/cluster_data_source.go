@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	api "github.com/openglshaders/astronomer-api/v2"
 )
 
@@ -19,27 +22,6 @@ func NewClusterDataSource() datasource.DataSource {
 type ClusterDataSource struct {
 	token          string
 	organizationId string
-}
-
-type ClusterDataSourceModel struct {
-	CloudProvider  types.String `tfsdk:"cloud_provider"`
-	DbInstanceType types.String `tfsdk:"db_instance_type"`
-	Id             types.String `tfsdk:"id"`
-	IsLimited      types.Bool   `tfsdk:"is_limited"`
-	// Metadata            ClusterMetadataModel   `tfsdk:"metadata"`
-	K8sTags             []ClusterK8sTagModel   `tfsdk:"k8s_tags"`
-	Name                types.String           `tfsdk:"name"`
-	NodePools           []ClusterNodePoolModel `tfsdk:"node_pools"`
-	OrganizationId      types.String           `tfsdk:"organization_id"`
-	PodSubnetRange      types.String           `tfsdk:"pod_subnet_range"`
-	ProviderAccount     types.String           `tfsdk:"provider_account"`
-	Region              types.String           `tfsdk:"region"`
-	ServicePeeringRange types.String           `tfsdk:"service_peering_range"`
-	ServiceSubnetRange  types.String           `tfsdk:"service_subnet_range"`
-	TenantId            types.String           `tfsdk:"tenant_id"`
-	Type                types.String           `tfsdk:"type"`
-	VpcSubnetRange      types.String           `tfsdk:"vpc_subnet_range"`
-	WorkspaceIds        []types.String         `tfsdk:"workspace_ids"`
 }
 
 func (d *ClusterDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -80,6 +62,19 @@ func (d *ClusterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 					},
 				},
 				MarkdownDescription: "The Kubernetes tags in the cluster.",
+				Computed:            true,
+			},
+			"metadata": schema.SingleNestedAttribute{
+				Attributes: map[string]schema.Attribute{
+					"external_ips": schema.ListAttribute{
+						ElementType: types.StringType,
+						Optional:    true,
+					},
+					"oidc_issuer_url": schema.StringAttribute{
+						Optional: true,
+					},
+				},
+				MarkdownDescription: "The cluster's metadata.",
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
@@ -156,7 +151,6 @@ func (d *ClusterDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 }
 
 func (d *ClusterDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -177,7 +171,7 @@ func (d *ClusterDataSource) Configure(ctx context.Context, req datasource.Config
 }
 
 func (d *ClusterDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data ClusterDataSourceModel
+	var data ClusterModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -196,10 +190,9 @@ func (d *ClusterDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	data.DbInstanceType = types.StringValue(clusterResponse.DbInstanceType)
 	data.Id = types.StringValue(clusterResponse.Id)
 	data.IsLimited = types.BoolValue(clusterResponse.IsLimited)
-	// data.Metadata = ClusterMetadataModel{
-	// 	ExternalIPs:   createTFStringListFromStrings(createResponse.Metadata.ExternalIPs),
-	// 	OidcIssuerUrl: types.StringValue(createResponse.Metadata.OidcIssuerUrl),
-	// }
+
+	data.Metadata, _ = getMetadata(clusterResponse)
+
 	data.K8sTags = createK8sTagTFStateFromRequest(clusterResponse.Tags)
 	data.Name = types.StringValue(clusterResponse.Name)
 	data.NodePools = createNodePoolTFStateFromRequest(clusterResponse.NodePools)
@@ -215,4 +208,19 @@ func (d *ClusterDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	data.WorkspaceIds = createTFStringListFromStrings(clusterResponse.WorkspaceIds)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func getMetadata(clusterResponse *api.ClusterResponse) (basetypes.ObjectValue, diag.Diagnostics) {
+	var values []attr.Value
+	for _, ip := range createTFStringListFromStrings(clusterResponse.Metadata.ExternalIPs) {
+		values = append(values, ip)
+	}
+	strs, _ := types.ListValue(types.StringType, values)
+	return types.ObjectValue(map[string]attr.Type{
+		"external_ips":    types.ListType{ElemType: types.StringType},
+		"oidc_issuer_url": types.StringType,
+	}, map[string]attr.Value{
+		"external_ips":    strs,
+		"oidc_issuer_url": types.StringValue(clusterResponse.Metadata.OidcIssuerUrl),
+	})
 }

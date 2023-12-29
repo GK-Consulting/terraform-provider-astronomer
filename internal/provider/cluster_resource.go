@@ -3,13 +3,13 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,48 +26,6 @@ func NewClusterResource() resource.Resource {
 type ClusterResource struct {
 	token          string
 	organizationId string
-}
-
-type ClusterMetadataModel struct {
-	ExternalIPs   []types.String `tfsdk:"external_ips"`
-	OidcIssuerUrl types.String   `tfsdk:"oidc_issuer_url"`
-}
-type ClusterNodePoolModel struct {
-	CloudProvider          types.String   `tfsdk:"cloud_provider"`
-	ClusterId              types.String   `tfsdk:"cluster_id"`
-	CreatedAt              types.String   `tfsdk:"created_at"`
-	Id                     types.String   `tfsdk:"id"`
-	IsDefault              types.Bool     `tfsdk:"is_default"`
-	MaxNodeCount           types.Int64    `tfsdk:"max_node_count"`
-	Name                   types.String   `tfsdk:"name"`
-	NodeInstanceType       types.String   `tfsdk:"node_instance_type"`
-	SupportedAstroMachines []types.String `tfsdk:"supported_astro_machines"`
-	UpdatedAt              types.String   `tfsdk:"updated_at"`
-}
-type ClusterK8sTagModel struct {
-	Key   types.String `tfsdk:"key"`
-	Value types.String `tfsdk:"value"`
-}
-
-type ClusterResourceModel struct {
-	CloudProvider  types.String `tfsdk:"cloud_provider"`
-	DbInstanceType types.String `tfsdk:"db_instance_type"`
-	Id             types.String `tfsdk:"id"`
-	IsLimited      types.Bool   `tfsdk:"is_limited"`
-	// Metadata            ClusterMetadataModel   `tfsdk:"metadata"`
-	K8sTags             []ClusterK8sTagModel   `tfsdk:"k8s_tags"`
-	Name                types.String           `tfsdk:"name"`
-	NodePools           []ClusterNodePoolModel `tfsdk:"node_pools"`
-	OrganizationId      types.String           `tfsdk:"organization_id"`
-	PodSubnetRange      types.String           `tfsdk:"pod_subnet_range"`
-	ProviderAccount     types.String           `tfsdk:"provider_account"`
-	Region              types.String           `tfsdk:"region"`
-	ServicePeeringRange types.String           `tfsdk:"service_peering_range"`
-	ServiceSubnetRange  types.String           `tfsdk:"service_subnet_range"`
-	TenantId            types.String           `tfsdk:"tenant_id"`
-	Type                types.String           `tfsdk:"type"`
-	VpcSubnetRange      types.String           `tfsdk:"vpc_subnet_range"`
-	WorkspaceIds        []types.String         `tfsdk:"workspace_ids"`
 }
 
 func (r *ClusterResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -104,7 +62,6 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 				MarkdownDescription: "Whether the cluster is limited.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.RequiresReplace(),
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
@@ -123,6 +80,22 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 				},
 				MarkdownDescription: "The Kubernetes tags in the cluster.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"metadata": schema.SingleNestedAttribute{
+				Attributes: map[string]schema.Attribute{
+					"external_ips": schema.ListAttribute{
+						ElementType: types.StringType,
+						Optional:    true,
+					},
+					"oidc_issuer_url": schema.StringAttribute{
+						Optional: true,
+					},
+				},
+				MarkdownDescription: "The cluster's metadata.",
+				Computed:            true,
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The cluster's name.",
@@ -162,6 +135,9 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"pod_subnet_range": schema.StringAttribute{
 				MarkdownDescription: "The subnet range for Pods. For GCP clusters only.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"provider_account": schema.StringAttribute{
 				MarkdownDescription: "The provider account ID. Required for Hybrid clusters.",
@@ -175,19 +151,28 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"service_peering_range": schema.StringAttribute{
 				MarkdownDescription: "The service peering range. For GCP clusters only.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"service_subnet_range": schema.StringAttribute{
 				MarkdownDescription: "The service subnet range. For GCP clusters only.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"region": schema.StringAttribute{
 				MarkdownDescription: "The cluster's region.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"tenant_id": schema.StringAttribute{
 				MarkdownDescription: "The tenant ID. For Azure clusters only.",
 				Optional:            true,
-				Computed:            true, //TODO not sure if this is correct
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -195,10 +180,16 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"type": schema.StringAttribute{
 				MarkdownDescription: "The cluster's type.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"vpc_subnet_range": schema.StringAttribute{
 				MarkdownDescription: "The VPC subnet range.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"workspace_ids": schema.ListAttribute{
 				ElementType:         types.StringType,
@@ -210,7 +201,6 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 }
 
 func (r *ClusterResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -230,7 +220,7 @@ func (r *ClusterResource) Configure(ctx context.Context, req resource.ConfigureR
 	r.organizationId = provider.OrganizationId
 }
 
-func createK8sTagRequestFromTFState(data ClusterResourceModel) []api.ClusterK8sTags {
+func createK8sTagRequestFromTFState(data ClusterModel) []api.ClusterK8sTags {
 	var k8sTags []api.ClusterK8sTags = []api.ClusterK8sTags{}
 	for _, value := range data.K8sTags {
 		k8sTags = append(k8sTags, api.ClusterK8sTags{
@@ -252,7 +242,7 @@ func createK8sTagTFStateFromRequest(tags []api.ClusterK8sTags) []ClusterK8sTagMo
 	return k8sTags
 }
 
-func createNodePoolRequestFromTFState(data ClusterResourceModel) []api.NodePoolRequest {
+func createNodePoolRequestFromTFState(data ClusterModel) []api.NodePoolRequest {
 	var nodePools []api.NodePoolRequest = []api.NodePoolRequest{}
 	for _, value := range data.NodePools {
 		nodePools = append(nodePools, api.NodePoolRequest{
@@ -301,9 +291,50 @@ func createTFStringListFromStrings(stringList []string) []types.String {
 }
 
 func (r *ClusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data ClusterResourceModel
+	var data ClusterModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if data.Type.ValueString() == "HYBRID" {
+		if data.DbInstanceType.IsUnknown() {
+			resp.Diagnostics.AddError(
+				"Validation Error",
+				"Hybrid Clusters require a db_instance_type",
+			)
+		}
+	}
+
+	if data.CloudProvider.ValueString() == api.CloudProviderGcp {
+		if data.PodSubnetRange.ValueString() == "" {
+			resp.Diagnostics.AddError(
+				"Validation Error",
+				"GCP Clusters require a pod_subnet_range",
+			)
+		}
+
+		if data.ServicePeeringRange.ValueString() == "" {
+			resp.Diagnostics.AddError(
+				"Validation Error",
+				"GCP Clusters require a service_peering_range",
+			)
+		}
+
+		if data.ServiceSubnetRange.ValueString() == "" {
+			resp.Diagnostics.AddError(
+				"Validation Error",
+				"GCP Clusters require a service_subnet_range",
+			)
+		}
+	}
+
+	if data.CloudProvider.ValueString() == api.CloudProviderAzure {
+		if data.TenantId.ValueString() == "" {
+			resp.Diagnostics.AddError(
+				"Validation Error",
+				"Azure Clusters require a tenant_id",
+			)
+		}
+	}
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -322,6 +353,18 @@ func (r *ClusterResource) Create(ctx context.Context, req resource.CreateRequest
 		WorkspaceIds:    createStringListFromTFState(data.WorkspaceIds),
 	}
 
+	// Load GCP Specific Data Points
+	if data.CloudProvider.ValueString() == api.CloudProviderGcp {
+		clusterCreateRequest.PodSubnetRange = data.PodSubnetRange.ValueString()
+		clusterCreateRequest.ServicePeeringRange = data.ServicePeeringRange.ValueString()
+		clusterCreateRequest.ServiceSubnetRange = data.ServiceSubnetRange.ValueString()
+	}
+
+	// Load Azure Specific Data Points
+	if data.CloudProvider.ValueString() == api.CloudProviderAzure {
+		clusterCreateRequest.TenantId = data.TenantId.ValueString()
+	}
+
 	createResponse, err := api.CreateCluster(r.token, r.organizationId, clusterCreateRequest)
 
 	if err != nil {
@@ -334,22 +377,15 @@ func (r *ClusterResource) Create(ctx context.Context, req resource.CreateRequest
 		time.Sleep(1 * time.Second)
 	}
 
-	// Load Hybrid Specific Data Points - TODO figure this out. Maybe should go in validation/create step
-	// if data.Type.ValueString() == "HYBRID" {
-	// 	data.DbInstanceType = types.StringValue(createResponse.DbInstanceType)
-	// data.ProviderAccount = types.StringValue(createResponse.ProviderAccount)
-	// }
-
-	//TODO we should also validate that these AREN'T set for non-gcp clusters
 	// Load GCP Specific Data Points
-	if data.CloudProvider.ValueString() == "GCP" {
+	if data.CloudProvider.ValueString() == api.CloudProviderGcp {
 		data.PodSubnetRange = types.StringValue(createResponse.PodSubnetRange)
 		data.ServicePeeringRange = types.StringValue(createResponse.ServicePeeringRange)
 		data.ServiceSubnetRange = types.StringValue(createResponse.ServiceSubnetRange)
 	}
 
 	// Load Azure Specific Data Points
-	if data.CloudProvider.ValueString() == "AZURE" {
+	if data.CloudProvider.ValueString() == api.CloudProviderAzure {
 		data.TenantId = types.StringValue(createResponse.TenantId)
 	}
 
@@ -357,10 +393,7 @@ func (r *ClusterResource) Create(ctx context.Context, req resource.CreateRequest
 	data.DbInstanceType = types.StringValue(createResponse.DbInstanceType)
 	data.Id = types.StringValue(createResponse.Id)
 	data.IsLimited = types.BoolValue(createResponse.IsLimited)
-	// data.Metadata = ClusterMetadataModel{
-	// 	ExternalIPs:   createTFStringListFromStrings(createResponse.Metadata.ExternalIPs),
-	// 	OidcIssuerUrl: types.StringValue(createResponse.Metadata.OidcIssuerUrl),
-	// }
+	data.Metadata, _ = getMetadata(createResponse)
 	data.K8sTags = createK8sTagTFStateFromRequest(createResponse.Tags)
 	data.Name = types.StringValue(createResponse.Name)
 	data.NodePools = createNodePoolTFStateFromRequest(createResponse.NodePools)
@@ -377,7 +410,7 @@ func (r *ClusterResource) Create(ctx context.Context, req resource.CreateRequest
 }
 
 func (r *ClusterResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data ClusterResourceModel
+	var data ClusterModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -392,10 +425,7 @@ func (r *ClusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 	data.DbInstanceType = types.StringValue(clusterResponse.DbInstanceType)
 	data.Id = types.StringValue(clusterResponse.Id)
 	data.IsLimited = types.BoolValue(clusterResponse.IsLimited)
-	// data.Metadata = ClusterMetadataModel{
-	// 	ExternalIPs:   createTFStringListFromStrings(createResponse.Metadata.ExternalIPs),
-	// 	OidcIssuerUrl: types.StringValue(createResponse.Metadata.OidcIssuerUrl),
-	// }
+	data.Metadata, _ = getMetadata(clusterResponse)
 	data.K8sTags = createK8sTagTFStateFromRequest(clusterResponse.Tags)
 	data.Name = types.StringValue(clusterResponse.Name)
 	data.NodePools = createNodePoolTFStateFromRequest(clusterResponse.NodePools)
@@ -418,7 +448,7 @@ func (r *ClusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *ClusterResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data ClusterResourceModel
+	var data ClusterModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -432,7 +462,6 @@ func (r *ClusterResource) Update(ctx context.Context, req resource.UpdateRequest
 		NodePools:      createNodePoolRequestFromTFState(data),
 		WorkspaceIds:   createStringListFromTFState(data.WorkspaceIds),
 	}
-	log.Println(clusterUpdateRequest)
 
 	clusterResponse, err := api.UpdateCluster(r.token, r.organizationId, data.Id.ValueString(), clusterUpdateRequest)
 	if err != nil {
@@ -455,7 +484,7 @@ func (r *ClusterResource) Update(ctx context.Context, req resource.UpdateRequest
 }
 
 func (r *ClusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data ClusterResourceModel
+	var data ClusterModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 

@@ -58,6 +58,7 @@ resource "astronomer_cluster" "aws_dedicated" {
 
 - `id` (String) The cluster's identifier.
 - `is_limited` (Boolean) Whether the cluster is limited.
+- `metadata` (Attributes) The cluster's metadata. (see [below for nested schema](#nestedatt--metadata))
 - `organization_id` (String) The organization this cluster is associated with.
 
 <a id="nestedatt--k8s_tags"></a>
@@ -81,3 +82,12 @@ Required:
 Optional:
 
 - `is_default` (Boolean) Whether the node pool is the default node pool of the cluster.
+
+
+<a id="nestedatt--metadata"></a>
+### Nested Schema for `metadata`
+
+Optional:
+
+- `external_ips` (List of String)
+- `oidc_issuer_url` (String)

@@ -87,16 +87,20 @@ type ClusterResponse struct {
 }
 
 type ClusterCreateRequest struct {
-	CloudProvider   string            `json:"cloudProvider"`
-	DbInstanceType  string            `json:"dbInstanceType"`
-	K8sTags         []ClusterK8sTags  `json:"k8sTags"`
-	Name            string            `json:"name"`
-	NodePools       []NodePoolRequest `json:"nodePools"`
-	ProviderAccount string            `json:"providerAccount"`
-	Region          string            `json:"region"`
-	Type            string            `json:"type"`
-	VpcSubnetRange  string            `json:"vpcSubnetRange"`
-	WorkspaceIds    []string          `json:"workspaceIds"`
+	CloudProvider       string            `json:"cloudProvider"`
+	DbInstanceType      string            `json:"dbInstanceType"`
+	K8sTags             []ClusterK8sTags  `json:"k8sTags"`
+	Name                string            `json:"name"`
+	NodePools           []NodePoolRequest `json:"nodePools"`
+	PodSubnetRange      string            `json:"podSubnetRange,omitempty"`
+	ProviderAccount     string            `json:"providerAccount"`
+	Region              string            `json:"region"`
+	ServicePeeringRange string            `json:"servicePeeringRange,omitempty"`
+	ServiceSubnetRange  string            `json:"serviceSubnetRange,omitempty"`
+	TenantId            string            `json:"tenantId,omitempty"`
+	Type                string            `json:"type"`
+	VpcSubnetRange      string            `json:"vpcSubnetRange"`
+	WorkspaceIds        []string          `json:"workspaceIds"`
 }
 
 type ClusterUpdateRequest struct {

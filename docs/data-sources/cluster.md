@@ -31,6 +31,7 @@ data "astronomer_cluster" "imported_cluster" {
 - `db_instance_type` (String) The type of database instance that is used for the cluster. Required for Hybrid clusters.
 - `is_limited` (Boolean) Whether the cluster is limited.
 - `k8s_tags` (Attributes List) The Kubernetes tags in the cluster. (see [below for nested schema](#nestedatt--k8s_tags))
+- `metadata` (Attributes) The cluster's metadata. (see [below for nested schema](#nestedatt--metadata))
 - `name` (String) The cluster's name.
 - `node_pools` (Attributes List) The list of node pools to create in the cluster. (see [below for nested schema](#nestedatt--node_pools))
 - `organization_id` (String) The organization this cluster is associated with.
@@ -51,6 +52,15 @@ Required:
 
 - `key` (String) The tag's key.
 - `value` (String) The tag's value.
+
+
+<a id="nestedatt--metadata"></a>
+### Nested Schema for `metadata`
+
+Optional:
+
+- `external_ips` (List of String)
+- `oidc_issuer_url` (String)
 
 
 <a id="nestedatt--node_pools"></a>
