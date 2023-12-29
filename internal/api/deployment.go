@@ -163,13 +163,7 @@ type DeploymentUpdateRequest struct {
 	SchedulerSize        string                       `json:"schedulerSize"`
 	Type                 string                       `json:"type,omitempty"`
 	WorkerQueues         []WorkerQueue                `json:"workerQueues"`
-	WorkloadIdentity     string                       `json:"workloadIdentity"`
 	WorkspaceId          string                       `json:"workspaceId"`
-}
-
-type DeploymentCreateResponse struct {
-	AstroRuntimeVersion string `json:"astroRuntimeVersion"`
-	Id                  string `json:"id"`
 }
 
 type DeploymentDeleteResponse struct{}
