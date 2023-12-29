@@ -87,13 +87,11 @@ func (r *ClusterResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"metadata": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
 					"external_ips": schema.ListAttribute{
-						ElementType:         types.StringType,
-						MarkdownDescription: "The tag's key.",
-						Optional:            true,
+						ElementType: types.StringType,
+						Optional:    true,
 					},
 					"oidc_issuer_url": schema.StringAttribute{
-						MarkdownDescription: "The tag's value.",
-						Optional:            true,
+						Optional: true,
 					},
 				},
 				MarkdownDescription: "The cluster's metadata.",
