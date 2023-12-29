@@ -13,23 +13,23 @@ type OrgListResponse struct {
 }
 
 type OrgResponse struct {
-	BillingEmail   string              `json:"billingEmail"`
-	CreatedAt      string              `json:"createdAt"`
-	CreatedBy      BasicSubjectProfile `json:"createdBy"`
-	ID             string              `json:"id"`
-	IsScimEnabled  bool                `json:"isScimEnabled"`
-	ManagedDomains []ManagedDomain     `json:"managedDomains"`
-	Name           string              `json:"name"`
-	PaymentMethod  string              `json:"paymentMethod"`
-	Product        string              `json:"product"`
-	Status         string              `json:"status"`
-	SupportPlan    string              `json:"supportPlan"`
-	TrialExpiresAt string              `json:"trialExpiresAt"`
-	UpdatedAt      string              `json:"updatedAt"`
-	UpdatedBy      BasicSubjectProfile `json:"updatedBy"`
+	BillingEmail   string                      `json:"billingEmail"`
+	CreatedAt      string                      `json:"createdAt"`
+	CreatedBy      BasicSubjectProfileResponse `json:"createdBy"`
+	ID             string                      `json:"id"`
+	IsScimEnabled  bool                        `json:"isScimEnabled"`
+	ManagedDomains []ManagedDomainResponse     `json:"managedDomains"`
+	Name           string                      `json:"name"`
+	PaymentMethod  string                      `json:"paymentMethod"`
+	Product        string                      `json:"product"`
+	Status         string                      `json:"status"`
+	SupportPlan    string                      `json:"supportPlan"`
+	TrialExpiresAt string                      `json:"trialExpiresAt"`
+	UpdatedAt      string                      `json:"updatedAt"`
+	UpdatedBy      BasicSubjectProfileResponse `json:"updatedBy"`
 }
 
-type BasicSubjectProfile struct {
+type BasicSubjectProfileResponse struct {
 	APITokenName string `json:"apiTokenName"`
 	AvatarUrl    string `json:"avatarUrl"`
 	FullName     string `json:"fullName"`
@@ -38,7 +38,7 @@ type BasicSubjectProfile struct {
 	Username     string `json:"username"`
 }
 
-type ManagedDomain struct {
+type ManagedDomainResponse struct {
 	CreatedAt      string   `json:"createdAt"`
 	EnforcedLogins []string `json:"enforcedLogins"`
 	ID             string   `json:"id"`
