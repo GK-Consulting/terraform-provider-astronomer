@@ -14,7 +14,7 @@ func TestOrgDataSource(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testOrgDataSourceConfig("Org Workspace"),
+				Config: testOrgDataSourceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.astronomer_organization.test", "billing_email"),
 					resource.TestCheckResourceAttrSet("data.astronomer_organization.test", "id"),
@@ -25,7 +25,7 @@ func TestOrgDataSource(t *testing.T) {
 	})
 }
 
-func testOrgDataSourceConfig(workspaceName string) string {
+func testOrgDataSourceConfig() string {
 	orgId := os.Getenv("ORGANIZATION_ID")
 	return fmt.Sprintf(`
 provider "astronomer" {
@@ -35,5 +35,5 @@ provider "astronomer" {
 data "astronomer_organization" "test" {
   id = %[1]q
 }
-`, orgId, workspaceName)
+`, orgId)
 }
