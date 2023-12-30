@@ -72,7 +72,7 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 		Attributes: map[string]schema.Attribute{
 			"astro_runtime_version": schema.StringAttribute{
 				MarkdownDescription: "Deployment's Astro Runtime version.",
-				Required:            true,
+				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
