@@ -50,8 +50,8 @@ resource "astronomer_deployment" "test" {
 	is_high_availability = true
 	name = "Test Deployment TF"
 	region = "us-east-1"
-	resource_quota_cpu = "160"
-	resource_quota_memory = "320Gi"
+	resource_quota_cpu = "1"
+	resource_quota_memory = "2Gi"
 	scheduler_size = "MEDIUM"
 	type = "STANDARD"
 	workspace_id = astronomer_workspace.test.id

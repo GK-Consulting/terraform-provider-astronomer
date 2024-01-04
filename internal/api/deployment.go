@@ -126,8 +126,8 @@ type SchedulerRequest struct {
 
 type DeploymentCreateRequest struct {
 	AstroRuntimeVersion  string           `json:"astroRuntimeVersion"`
-	ClusterId            string           `json:"clusterId,omitempty"`
 	CloudProvider        string           `json:"cloudProvider,omitempty"`
+	ClusterId            string           `json:"clusterId,omitempty"`
 	DefaultTaskPodCpu    string           `json:"defaultTaskPodCpu"`
 	DefaultTaskPodMemory string           `json:"defaultTaskPodMemory"`
 	Description          string           `json:"description"`
@@ -139,7 +139,7 @@ type DeploymentCreateRequest struct {
 	Region               string           `json:"region,omitempty"`
 	ResourceQuotaCpu     string           `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory  string           `json:"resourceQuotaMemory"`
-	Scheduler            SchedulerRequest `json:"scheduler	"`
+	Scheduler            SchedulerRequest `json:"scheduler"`
 	SchedulerSize        string           `json:"schedulerSize"`
 	TaskPodNodePoolId    string           `json:"taskPodNodePoolId"`
 	Type                 string           `json:"type"`
@@ -160,9 +160,12 @@ type DeploymentUpdateRequest struct {
 	Name                 string                       `json:"name"`
 	ResourceQuotaCpu     string                       `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory  string                       `json:"resourceQuotaMemory"`
+	Scheduler            SchedulerRequest             `json:"scheduler"`
 	SchedulerSize        string                       `json:"schedulerSize"`
+	TaskPodNodePoolId    string                       `json:"taskPodNodePoolId"`
 	Type                 string                       `json:"type,omitempty"`
 	WorkerQueues         []WorkerQueue                `json:"workerQueues"`
+	WorkloadIdentity     string                       `json:"workloadIdentity"`
 	WorkspaceId          string                       `json:"workspaceId"`
 }
 
