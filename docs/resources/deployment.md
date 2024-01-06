@@ -20,7 +20,7 @@ resource "astronomer_deployment" "standard_deployment" {
   default_task_pod_memory = "1Gi"
   description             = "A Standard Deployment"
   executor                = "CELERY"
-  is_dag_deploy_enforced  = true
+  is_dag_deploy_enabled   = true
   is_cicd_enforced        = true
   is_high_availability    = true
   name                    = "Test Deployment TF"
@@ -40,6 +40,18 @@ resource "astronomer_deployment" "standard_deployment" {
       worker_concurrency : 1,
     },
   ]
+  environment_variables = [
+    {
+      is_secret : true,
+      key : "AWS_ACCESS_SECRET_KEY",
+      value : "SECRET_VALUE",
+    },
+    {
+      is_secret : false,
+      key : "AWS_ACCESS_KEY_ID",
+      value : "NOT_SECRET",
+    },
+  ]
 }
 ```
 
@@ -48,12 +60,11 @@ resource "astronomer_deployment" "standard_deployment" {
 
 ### Required
 
-- `astro_runtime_version` (String) Deployment's Astro Runtime version.
 - `default_task_pod_cpu` (String) The default CPU resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in number of CPU cores.
 - `default_task_pod_memory` (String) The default memory resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in `Gi`. This value must always be twice the value of `DefaultTaskPodCpu`.
 - `executor` (String) The Deployment's executor type.
 - `is_cicd_enforced` (Boolean) Whether the Deployment requires that all deploys are made through CI/CD.
-- `is_dag_deploy_enforced` (Boolean) Whether the Deployment has DAG deploys enabled.
+- `is_dag_deploy_enabled` (Boolean) Whether the Deployment has DAG deploys enabled.
 - `is_high_availability` (Boolean) Whether the Deployment is configured for high availability. If `true`, multiple scheduler pods will be online.
 - `name` (String) The Deployment's name.
 - `resource_quota_cpu` (String) The CPU quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current CPU usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in number of CPU cores.
@@ -64,16 +75,32 @@ resource "astronomer_deployment" "standard_deployment" {
 
 ### Optional
 
+- `astro_runtime_version` (String) Deployment's Astro Runtime version.
 - `cloud_provider` (String) The cloud provider for the Deployment's cluster. Optional if `ClusterId` is specified.
 - `cluster_id` (String) The ID of the cluster where the Deployment will be created.
 - `description` (String) The Deployment's description.
+- `environment_variables` (Attributes List) List of environment variables to add to the Deployment. (see [below for nested schema](#nestedatt--environment_variables))
 - `region` (String) The region to host the Deployment in. Optional if `ClusterId` is specified.
+- `task_pod_node_pool_id` (String) The node pool ID for the task pods. For KUBERNETES executor only.
 - `worker_queues` (Attributes List) The list of worker queues configured for the Deployment. Applies only when `Executor` is `CELERY`. At least 1 worker queue is needed. All Deployments need at least 1 worker queue called `default`. (see [below for nested schema](#nestedatt--worker_queues))
 
 ### Read-Only
 
 - `id` (String) The Deployment's identifier.
 - `workload_identity` (String) The Deployment's workload identity.
+
+<a id="nestedatt--environment_variables"></a>
+### Nested Schema for `environment_variables`
+
+Required:
+
+- `is_secret` (Boolean) Whether the environment variable is a secret.
+- `key` (String) The environment variable key, used to call the value in code.
+
+Optional:
+
+- `value` (String, Sensitive) The environment variable value.
+
 
 <a id="nestedatt--worker_queues"></a>
 ### Nested Schema for `worker_queues`

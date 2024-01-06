@@ -5,7 +5,7 @@ resource "astronomer_deployment" "standard_deployment" {
   default_task_pod_memory = "1Gi"
   description             = "A Standard Deployment"
   executor                = "CELERY"
-  is_dag_deploy_enforced  = true
+  is_dag_deploy_enabled   = true
   is_cicd_enforced        = true
   is_high_availability    = true
   name                    = "Test Deployment TF"
@@ -23,6 +23,18 @@ resource "astronomer_deployment" "standard_deployment" {
       min_worker_count : 1,
       name : "default",
       worker_concurrency : 1,
+    },
+  ]
+  environment_variables = [
+    {
+      is_secret : true,
+      key : "AWS_ACCESS_SECRET_KEY",
+      value : "SECRET_VALUE",
+    },
+    {
+      is_secret : false,
+      key : "AWS_ACCESS_KEY_ID",
+      value : "NOT_SECRET",
     },
   ]
 }
