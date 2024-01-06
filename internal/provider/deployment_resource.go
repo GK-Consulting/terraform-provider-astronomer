@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 
@@ -362,7 +363,7 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	data.DefaultTaskPodCpu = types.StringValue(deployment.DefaultTaskPodCpu)
 	data.DefaultTaskPodMemory = types.StringValue(deployment.DefaultTaskPodMemory)
 	data.Description = types.StringValue(deployment.Description)
-	data.EnvironmentVariables = loadEnvironmentVariablesFromResponse(deployment)
+	data.EnvironmentVariables = loadEnvironmentVariablesFromResponse(deployment, data)
 	data.Executor = types.StringValue(deployment.Executor)
 	data.IsCicdEnforced = types.BoolValue(deployment.IsCicdEnforced)
 	data.IsDagDeployEnabled = types.BoolValue(deployment.IsDagDeployEnabled)
@@ -461,19 +462,22 @@ func loadWorkerQueuesFromResponse(deployment *api.DeploymentResponse) []WorkerQu
 	return workerQueues
 }
 
-func loadEnvironmentVariablesFromResponse(deployment *api.DeploymentResponse) []EnvironmentVariableModel {
+func loadEnvironmentVariablesFromResponse(deployment *api.DeploymentResponse, data DeploymentResourceModel) []EnvironmentVariableModel {
 	var envVars []EnvironmentVariableModel
 
 	for _, value := range deployment.EnvironmentVariables {
-		// TODO handle secret case
-		// strValue := types.StringValue(value.Value)
-		// if value.IsSecret {
-		// 	strValue
-		// }
+		strValue := types.StringValue(value.Value)
+		if value.IsSecret {
+			idx := slices.IndexFunc(data.EnvironmentVariables, func(envVar EnvironmentVariableModel) bool { return envVar.Key.ValueString() == value.Key })
+			if idx != -1 {
+				strValue = data.EnvironmentVariables[idx].Value
+			}
+
+		}
 		envVars = append(envVars, EnvironmentVariableModel{
 			IsSecret: types.BoolValue(value.IsSecret),
 			Key:      types.StringValue(value.Key),
-			Value:    types.StringValue(value.Value),
+			Value:    strValue,
 		})
 	}
 	return envVars
