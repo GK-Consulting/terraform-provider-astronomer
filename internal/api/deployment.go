@@ -83,7 +83,7 @@ type DeploymentResponse struct {
 	ResourceQuotaCpu         string                        `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory      string                        `json:"resourceQuotaMemory"`
 	RuntimeVersion           string                        `json:"runtimeVersion"`
-	SchedulerAu              int                           `json:"schedulerAu"`
+	SchedulerAu              string                        `json:"schedulerAu"`
 	SchedulerCpu             string                        `json:"schedulerCpu"`
 	SchedulerMemory          string                        `json:"schedulerMemory"`
 	SchedulerReplicas        int                           `json:"schedulerReplicas"`

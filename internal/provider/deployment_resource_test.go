@@ -20,7 +20,7 @@ func TestAccDeploymentResource(t *testing.T) {
 					resource.TestCheckResourceAttr("astronomer_deployment.test", "astro_runtime_version", "9.1.0"),
 					resource.TestCheckResourceAttr("astronomer_deployment.test", "is_high_availability", "true"),
 					resource.TestCheckResourceAttr("astronomer_deployment.test", "is_cicd_enforced", "true"),
-					resource.TestCheckResourceAttr("astronomer_deployment.test", "is_dag_deploy_enforced", "true"),
+					resource.TestCheckResourceAttr("astronomer_deployment.test", "is_dag_deploy_enabled", "true"),
 				),
 			},
 			{
@@ -59,7 +59,7 @@ resource "astronomer_deployment" "test" {
 	default_task_pod_memory = "1Gi"
 	description = "A Standard Deployment"
 	executor = "CELERY"
-	is_dag_deploy_enforced = true
+	is_dag_deploy_enabled = true
 	is_cicd_enforced = true
 	is_high_availability = true
 	name = %[2]q

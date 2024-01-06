@@ -7,12 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	api "github.com/openglshaders/astronomer-api/v2"
 )
 
@@ -27,28 +30,36 @@ type DeploymentResource struct {
 	token          string
 	organizationId string
 }
+type EnvironmentVariableModel struct {
+	IsSecret types.Bool   `tfsdk:"is_secret"`
+	Key      types.String `tfsdk:"key"`
+	Value    types.String `tfsdk:"value"`
+}
 
 type DeploymentResourceModel struct {
-	AstroRuntimeVersion  types.String       `tfsdk:"astro_runtime_version"`
-	CloudProvider        types.String       `tfsdk:"cloud_provider"`
-	ClusterId            types.String       `tfsdk:"cluster_id"`
-	DefaultTaskPodCpu    types.String       `tfsdk:"default_task_pod_cpu"`
-	DefaultTaskPodMemory types.String       `tfsdk:"default_task_pod_memory"`
-	Description          types.String       `tfsdk:"description"`
-	Executor             types.String       `tfsdk:"executor"`
-	Id                   types.String       `tfsdk:"id"`
-	IsCicdEnforced       types.Bool         `tfsdk:"is_cicd_enforced"`
-	IsDagDeployEnforced  types.Bool         `tfsdk:"is_dag_deploy_enforced"`
-	IsHighAvailability   types.Bool         `tfsdk:"is_high_availability"`
-	Name                 types.String       `tfsdk:"name"`
-	Region               types.String       `tfsdk:"region"`
-	ResourceQuotaCpu     types.String       `tfsdk:"resource_quota_cpu"`
-	ResourceQuotaMemory  types.String       `tfsdk:"resource_quota_memory"`
-	SchedulerSize        types.String       `tfsdk:"scheduler_size"`
-	Type                 types.String       `tfsdk:"type"`
-	WorkerQueues         []WorkerQueueModel `tfsdk:"worker_queues"`
-	WorkloadIdentity     types.String       `tfsdk:"workload_identity"`
-	WorkspaceId          types.String       `tfsdk:"workspace_id"`
+	AstroRuntimeVersion  types.String               `tfsdk:"astro_runtime_version"`
+	CloudProvider        types.String               `tfsdk:"cloud_provider"`
+	ClusterId            types.String               `tfsdk:"cluster_id"`
+	DefaultTaskPodCpu    types.String               `tfsdk:"default_task_pod_cpu"`
+	DefaultTaskPodMemory types.String               `tfsdk:"default_task_pod_memory"`
+	Description          types.String               `tfsdk:"description"`
+	EnvironmentVariables []EnvironmentVariableModel `tfsdk:"environment_variables"`
+	Executor             types.String               `tfsdk:"executor"`
+	Id                   types.String               `tfsdk:"id"`
+	IsCicdEnforced       types.Bool                 `tfsdk:"is_cicd_enforced"`
+	IsDagDeployEnabled   types.Bool                 `tfsdk:"is_dag_deploy_enabled"`
+	IsHighAvailability   types.Bool                 `tfsdk:"is_high_availability"`
+	Name                 types.String               `tfsdk:"name"`
+	Region               types.String               `tfsdk:"region"`
+	ResourceQuotaCpu     types.String               `tfsdk:"resource_quota_cpu"`
+	ResourceQuotaMemory  types.String               `tfsdk:"resource_quota_memory"`
+	TaskPodNodePoolId    types.String               `tfsdk:"task_pod_node_pool_id"`
+	Scheduler            types.Object               `tfsdk:"scheduler"`
+	SchedulerSize        types.String               `tfsdk:"scheduler_size"`
+	Type                 types.String               `tfsdk:"type"`
+	WorkerQueues         []WorkerQueueModel         `tfsdk:"worker_queues"`
+	WorkloadIdentity     types.String               `tfsdk:"workload_identity"`
+	WorkspaceId          types.String               `tfsdk:"workspace_id"`
 }
 
 type WorkerQueueModel struct {
@@ -92,10 +103,6 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"description": schema.StringAttribute{
-				MarkdownDescription: "The Deployment's description.",
-				Optional:            true,
-			},
 			"default_task_pod_cpu": schema.StringAttribute{
 				MarkdownDescription: "The default CPU resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in number of CPU cores.",
 				Required:            true,
@@ -103,6 +110,31 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"default_task_pod_memory": schema.StringAttribute{
 				MarkdownDescription: "The default memory resource usage for a worker Pod when running the Kubernetes executor or KubernetesPodOperator. Units are in `Gi`. This value must always be twice the value of `DefaultTaskPodCpu`.",
 				Required:            true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "The Deployment's description.",
+				Optional:            true,
+			},
+			"environment_variables": schema.ListNestedAttribute{
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"is_secret": schema.BoolAttribute{
+							Required:            true,
+							MarkdownDescription: "Whether the environment variable is a secret.",
+						},
+						"key": schema.StringAttribute{
+							Required:            true,
+							MarkdownDescription: "The environment variable key, used to call the value in code.",
+						},
+						"value": schema.StringAttribute{
+							Optional:            true,
+							Sensitive:           true,
+							MarkdownDescription: "The environment variable value.",
+						},
+					},
+				},
+				MarkdownDescription: "List of environment variables to add to the Deployment.",
+				Optional:            true,
 			},
 			"executor": schema.StringAttribute{
 				MarkdownDescription: "The Deployment's executor type.",
@@ -119,7 +151,7 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "Whether the Deployment requires that all deploys are made through CI/CD.",
 				Required:            true,
 			},
-			"is_dag_deploy_enforced": schema.BoolAttribute{
+			"is_dag_deploy_enabled": schema.BoolAttribute{
 				MarkdownDescription: "Whether the Deployment has DAG deploys enabled.",
 				Required:            true,
 			},
@@ -143,9 +175,27 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "The memory quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current memory usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in `Gi`. This value must always be twice the value of `ResourceQuotaCpu`.",
 				Required:            true,
 			},
+			"scheduler": schema.SingleNestedAttribute{
+				Attributes: map[string]schema.Attribute{
+					"au": schema.StringAttribute{
+						Required:            true,
+						MarkdownDescription: "The number of Astro unit allocated to the Deployment pod. Minimum 5, Maximum 24.",
+					},
+					"replicas": schema.Int64Attribute{
+						Required:            true,
+						MarkdownDescription: "The number of replicas the pod should have. Minimum 1, Maximum 4.",
+					},
+				},
+				MarkdownDescription: "The cluster's scheduler details.",
+				Optional:            true,
+			},
 			"scheduler_size": schema.StringAttribute{
 				MarkdownDescription: "The size of the scheduler pod.",
 				Required:            true,
+			},
+			"task_pod_node_pool_id": schema.StringAttribute{
+				MarkdownDescription: "The node pool ID for the task pods. For KUBERNETES executor only.",
+				Optional:            true,
 			},
 			"type": schema.StringAttribute{
 				MarkdownDescription: "The type of the Deployment.",
@@ -219,6 +269,16 @@ func (r *DeploymentResource) Configure(ctx context.Context, req resource.Configu
 	r.organizationId = provider.OrganizationId
 }
 
+func getSchedulerFromResponse(deploymentResponse *api.DeploymentResponse) (basetypes.ObjectValue, diag.Diagnostics) {
+	return types.ObjectValue(map[string]attr.Type{
+		"au":       types.StringType,
+		"replicas": types.Int64Type,
+	}, map[string]attr.Value{
+		"au":       types.StringValue(deploymentResponse.SchedulerAu),
+		"replicas": types.Int64Value(int64(deploymentResponse.SchedulerReplicas)),
+	})
+}
+
 func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data DeploymentResourceModel
 
@@ -242,29 +302,34 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	workerQueues := loadWorkerQueuesFromTFState(data)
+	au, _ := data.Scheduler.Attributes()["au"].(basetypes.StringValuable).ToStringValue(ctx)
+	replicas, _ := data.Scheduler.Attributes()["replicas"].(basetypes.Int64Valuable).ToInt64Value(ctx)
 
-	//TODO add remaining to model
 	deploymentCreateRequest := &api.DeploymentCreateRequest{
 		AstroRuntimeVersion:  data.AstroRuntimeVersion.ValueString(),
-		ClusterId:            data.ClusterId.ValueString(),
 		CloudProvider:        data.CloudProvider.ValueString(),
+		ClusterId:            data.ClusterId.ValueString(),
 		DefaultTaskPodCpu:    data.DefaultTaskPodCpu.ValueString(),
 		DefaultTaskPodMemory: data.DefaultTaskPodMemory.ValueString(),
 		Description:          data.Description.ValueString(),
+		EnvironmentVariables: loadEnvironmentVariablesFromTFState(data),
 		Executor:             data.Executor.ValueString(),
 		IsCicdEnforced:       data.IsCicdEnforced.ValueBool(),
-		IsDagDeployEnabled:   data.IsDagDeployEnforced.ValueBool(),
+		IsDagDeployEnabled:   data.IsDagDeployEnabled.ValueBool(),
 		IsHighAvailability:   data.IsHighAvailability.ValueBool(),
 		Name:                 data.Name.ValueString(),
 		Region:               data.Region.ValueString(),
 		ResourceQuotaCpu:     data.ResourceQuotaCpu.ValueString(),
 		ResourceQuotaMemory:  data.ResourceQuotaMemory.ValueString(),
-		// Scheduler: data.Sch,
-		SchedulerSize: data.SchedulerSize.ValueString(),
-		// TaskPodNodePoolId: data.Task,
-		Type:         data.Type.ValueString(),
-		WorkerQueues: workerQueues,
-		WorkspaceId:  data.WorkspaceId.ValueString(),
+		Scheduler: api.SchedulerRequest{
+			Au:       au.ValueString(),
+			Replicas: int(replicas.ValueInt64()),
+		},
+		SchedulerSize:     data.SchedulerSize.ValueString(),
+		TaskPodNodePoolId: data.TaskPodNodePoolId.ValueString(),
+		Type:              data.Type.ValueString(),
+		WorkerQueues:      workerQueues,
+		WorkspaceId:       data.WorkspaceId.ValueString(),
 	}
 
 	deployResponse, err := api.CreateDeployment(r.token, r.organizationId, deploymentCreateRequest)
@@ -279,15 +344,13 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 		time.Sleep(1 * time.Second)
 	}
 
-	// TODO fill out the rest
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployResponse.CloudProvider))
 	if data.ClusterId.ValueString() != "" {
 		data.ClusterId = types.StringValue(deployResponse.ClusterId)
 	}
+
 	// data.DbInstanceType = types.StringValue(deployResponse.CloudProvider)
 	data.Id = types.StringValue(deployResponse.Id)
-	// data.IsLimited
-	// data.Metadata
 	data.Name = types.StringValue(deployResponse.Name)
 	// data.Node = types.StringValue(deployResponse.Name)
 	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
@@ -320,7 +383,6 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	// data.AstroRuntimeVersion = types.StringValue(deployment.Astro)
 	data.CloudProvider = types.StringValue(strings.ToUpper(deployment.CloudProvider))
 	if data.ClusterId.ValueString() != "" {
 		data.ClusterId = types.StringValue(deployment.ClusterId)
@@ -329,34 +391,24 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	data.DefaultTaskPodCpu = types.StringValue(deployment.DefaultTaskPodCpu)
 	data.DefaultTaskPodMemory = types.StringValue(deployment.DefaultTaskPodMemory)
 	data.Description = types.StringValue(deployment.Description)
+	data.EnvironmentVariables = loadEnvironmentVariablesFromResponse(deployment)
 	data.Executor = types.StringValue(deployment.Executor)
 	data.IsCicdEnforced = types.BoolValue(deployment.IsCicdEnforced)
-	data.IsDagDeployEnforced = types.BoolValue(deployment.IsDagDeployEnabled) //TODO check names on this
+	data.IsDagDeployEnabled = types.BoolValue(deployment.IsDagDeployEnabled)
 	data.IsHighAvailability = types.BoolValue(deployment.IsHighAvailability)
 
-	// data.DbInstanceType = types.StringValue(deployResponse.CloudProvider)
-	// data.IsLimited
-	// data.Metadata
 	data.Name = types.StringValue(deployment.Name)
-	// data.Node = types.StringValue(deployResponse.Name)
-	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
-	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
 	if data.Region.ValueString() != "" || deployment.Region != "" {
 		data.Region = types.StringValue(deployment.Region)
 	}
 	data.ResourceQuotaCpu = types.StringValue(deployment.ResourceQuotaCpu)
 	data.ResourceQuotaMemory = types.StringValue(deployment.ResourceQuotaMemory)
+	data.Scheduler, _ = getSchedulerFromResponse(deployment)
 	data.SchedulerSize = types.StringValue(deployment.SchedulerSize)
 
 	workerQueues := loadWorkerQueuesFromResponse(deployment)
 	data.WorkerQueues = workerQueues
-
-	// data.ServicePeeringRange
-	// data.ServiceSubnetRange
-	// data.Tags
-	// data.TenantId
 	data.Type = types.StringValue(deployment.Type)
-	// data.VpcSubnetRange
 	data.WorkloadIdentity = types.StringValue(deployment.WorkloadIdentity)
 	data.WorkspaceId = types.StringValue(deployment.WorkspaceId)
 
@@ -364,7 +416,6 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -384,6 +435,18 @@ func loadWorkerQueuesFromTFState(data DeploymentResourceModel) []api.WorkerQueue
 	return workerQueues
 }
 
+func loadEnvironmentVariablesFromTFState(data DeploymentResourceModel) []api.EnvironmentVariableRequest {
+	var envVars []api.EnvironmentVariableRequest
+	for _, value := range data.EnvironmentVariables {
+		envVars = append(envVars, api.EnvironmentVariableRequest{
+			IsSecret: value.IsSecret.ValueBool(),
+			Key:      value.Key.ValueString(),
+			Value:    value.Value.ValueString(),
+		})
+	}
+	return envVars
+}
+
 func loadWorkerQueuesFromResponse(deployment *api.DeploymentResponse) []WorkerQueueModel {
 	var workerQueues []WorkerQueueModel
 	for _, value := range deployment.WorkerQueues {
@@ -400,6 +463,18 @@ func loadWorkerQueuesFromResponse(deployment *api.DeploymentResponse) []WorkerQu
 	return workerQueues
 }
 
+func loadEnvironmentVariablesFromResponse(deployment *api.DeploymentResponse) []EnvironmentVariableModel {
+	var envVars []EnvironmentVariableModel
+	for _, value := range deployment.EnvironmentVariables {
+		envVars = append(envVars, EnvironmentVariableModel{
+			IsSecret: types.BoolValue(value.IsSecret),
+			Key:      types.StringValue(value.Key),
+			Value:    types.StringValue(value.Value),
+		})
+	}
+	return envVars
+}
+
 func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data DeploymentResourceModel
 
@@ -411,15 +486,19 @@ func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	workerQueues := loadWorkerQueuesFromTFState(data)
+	envVars := loadEnvironmentVariablesFromTFState(data)
+
+	log.Println("envVars ARE HERE")
+	log.Println(envVars)
 	deploymentUpdateRequest := &api.DeploymentUpdateRequest{
 		//TODO add Contact Emails
 		DefaultTaskPodCpu:    data.DefaultTaskPodCpu.ValueString(),
 		DefaultTaskPodMemory: data.DefaultTaskPodMemory.ValueString(),
 		Description:          data.Description.ValueString(),
-		EnvironmentVariables: []api.EnvironmentVariableRequest{}, // TODO finish up
+		EnvironmentVariables: envVars,
 		Executor:             data.Executor.ValueString(),
 		IsCicdEnforced:       data.IsCicdEnforced.ValueBool(),
-		IsDagDeployEnabled:   data.IsDagDeployEnforced.ValueBool(),
+		IsDagDeployEnabled:   data.IsDagDeployEnabled.ValueBool(),
 		IsHighAvailability:   data.IsHighAvailability.ValueBool(),
 		Name:                 data.Name.ValueString(),
 		ResourceQuotaCpu:     data.ResourceQuotaCpu.ValueString(),
@@ -427,8 +506,8 @@ func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 		SchedulerSize:        data.SchedulerSize.ValueString(),
 		Type:                 data.Type.ValueString(),
 		WorkerQueues:         workerQueues,
-		// WorkloadIdentity: data.WorkloadIdentity, // TODO
-		WorkspaceId: data.WorkspaceId.ValueString(),
+		WorkloadIdentity:     data.WorkloadIdentity.ValueString(),
+		WorkspaceId:          data.WorkspaceId.ValueString(),
 	}
 
 	deployResponse, err := api.UpdateDeployment(r.token, r.organizationId, data.Id.ValueString(), deploymentUpdateRequest)

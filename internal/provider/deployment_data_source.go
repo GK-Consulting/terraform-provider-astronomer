@@ -38,7 +38,6 @@ func (d *DeploymentDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *DeploymentDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Astronomer Deployment Resource",
 
 		Attributes: map[string]schema.Attribute{
