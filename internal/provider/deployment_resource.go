@@ -7,15 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	api "github.com/openglshaders/astronomer-api/v2"
 )
 
@@ -54,12 +51,12 @@ type DeploymentResourceModel struct {
 	ResourceQuotaCpu     types.String               `tfsdk:"resource_quota_cpu"`
 	ResourceQuotaMemory  types.String               `tfsdk:"resource_quota_memory"`
 	TaskPodNodePoolId    types.String               `tfsdk:"task_pod_node_pool_id"`
-	Scheduler            types.Object               `tfsdk:"scheduler"`
-	SchedulerSize        types.String               `tfsdk:"scheduler_size"`
-	Type                 types.String               `tfsdk:"type"`
-	WorkerQueues         []WorkerQueueModel         `tfsdk:"worker_queues"`
-	WorkloadIdentity     types.String               `tfsdk:"workload_identity"`
-	WorkspaceId          types.String               `tfsdk:"workspace_id"`
+	// Scheduler            *types.Object              `tfsdk:"scheduler"`
+	SchedulerSize    types.String       `tfsdk:"scheduler_size"`
+	Type             types.String       `tfsdk:"type"`
+	WorkerQueues     []WorkerQueueModel `tfsdk:"worker_queues"`
+	WorkloadIdentity types.String       `tfsdk:"workload_identity"`
+	WorkspaceId      types.String       `tfsdk:"workspace_id"`
 }
 
 type WorkerQueueModel struct {
@@ -175,20 +172,20 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 				MarkdownDescription: "The memory quota for worker Pods when running the Kubernetes executor or KubernetesPodOperator. If current memory usage across all workers exceeds the quota, no new worker Pods can be scheduled. Units are in `Gi`. This value must always be twice the value of `ResourceQuotaCpu`.",
 				Required:            true,
 			},
-			"scheduler": schema.SingleNestedAttribute{
-				Attributes: map[string]schema.Attribute{
-					"au": schema.StringAttribute{
-						Required:            true,
-						MarkdownDescription: "The number of Astro unit allocated to the Deployment pod. Minimum 5, Maximum 24.",
-					},
-					"replicas": schema.Int64Attribute{
-						Required:            true,
-						MarkdownDescription: "The number of replicas the pod should have. Minimum 1, Maximum 4.",
-					},
-				},
-				MarkdownDescription: "The cluster's scheduler details.",
-				Optional:            true,
-			},
+			// "scheduler": schema.SingleNestedAttribute{
+			// 	Attributes: map[string]schema.Attribute{
+			// 		"au": schema.Int64Attribute{
+			// 			Required:            true,
+			// 			MarkdownDescription: "The number of Astro unit allocated to the Deployment pod. Minimum 5, Maximum 24.",
+			// 		},
+			// 		"replicas": schema.Int64Attribute{
+			// 			Required:            true,
+			// 			MarkdownDescription: "The number of replicas the pod should have. Minimum 1, Maximum 4.",
+			// 		},
+			// 	},
+			// 	MarkdownDescription: "The cluster's scheduler details.",
+			// 	Optional:            true,
+			// },
 			"scheduler_size": schema.StringAttribute{
 				MarkdownDescription: "The size of the scheduler pod.",
 				Required:            true,
@@ -249,7 +246,6 @@ func (r *DeploymentResource) Schema(ctx context.Context, req resource.SchemaRequ
 }
 
 func (r *DeploymentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
@@ -267,16 +263,6 @@ func (r *DeploymentResource) Configure(ctx context.Context, req resource.Configu
 
 	r.token = provider.Token
 	r.organizationId = provider.OrganizationId
-}
-
-func getSchedulerFromResponse(deploymentResponse *api.DeploymentResponse) (basetypes.ObjectValue, diag.Diagnostics) {
-	return types.ObjectValue(map[string]attr.Type{
-		"au":       types.StringType,
-		"replicas": types.Int64Type,
-	}, map[string]attr.Value{
-		"au":       types.StringValue(deploymentResponse.SchedulerAu),
-		"replicas": types.Int64Value(int64(deploymentResponse.SchedulerReplicas)),
-	})
 }
 
 func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -302,9 +288,6 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	workerQueues := loadWorkerQueuesFromTFState(data)
-	au, _ := data.Scheduler.Attributes()["au"].(basetypes.StringValuable).ToStringValue(ctx)
-	replicas, _ := data.Scheduler.Attributes()["replicas"].(basetypes.Int64Valuable).ToInt64Value(ctx)
-
 	deploymentCreateRequest := &api.DeploymentCreateRequest{
 		AstroRuntimeVersion:  data.AstroRuntimeVersion.ValueString(),
 		CloudProvider:        data.CloudProvider.ValueString(),
@@ -321,10 +304,7 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 		Region:               data.Region.ValueString(),
 		ResourceQuotaCpu:     data.ResourceQuotaCpu.ValueString(),
 		ResourceQuotaMemory:  data.ResourceQuotaMemory.ValueString(),
-		Scheduler: api.SchedulerRequest{
-			Au:       au.ValueString(),
-			Replicas: int(replicas.ValueInt64()),
-		},
+		// Scheduler:            loadSchedulerFromTFState(ctx, data),
 		SchedulerSize:     data.SchedulerSize.ValueString(),
 		TaskPodNodePoolId: data.TaskPodNodePoolId.ValueString(),
 		Type:              data.Type.ValueString(),
@@ -349,21 +329,12 @@ func (r *DeploymentResource) Create(ctx context.Context, req resource.CreateRequ
 		data.ClusterId = types.StringValue(deployResponse.ClusterId)
 	}
 
-	// data.DbInstanceType = types.StringValue(deployResponse.CloudProvider)
 	data.Id = types.StringValue(deployResponse.Id)
 	data.Name = types.StringValue(deployResponse.Name)
-	// data.Node = types.StringValue(deployResponse.Name)
-	// data.PodSubnetRange = types.StringValue(deployResponse.OrganizationId)
-	// data.ProviderAccount = types.StringValue(deployResponse.OrganizationId)
 	if data.Region.ValueString() != "" {
 		data.Region = types.StringValue(deployResponse.Region)
 	}
-	// data.ServicePeeringRange
-	// data.ServiceSubnetRange
-	// data.Tags
-	// data.TenantId
 	data.Type = types.StringValue(deployResponse.Type)
-	// data.VpcSubnetRange
 	workerQueuesDeployment := loadWorkerQueuesFromResponse(deployResponse)
 	data.WorkerQueues = workerQueuesDeployment
 	data.WorkloadIdentity = types.StringValue(deployResponse.WorkloadIdentity)
@@ -403,7 +374,7 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 	data.ResourceQuotaCpu = types.StringValue(deployment.ResourceQuotaCpu)
 	data.ResourceQuotaMemory = types.StringValue(deployment.ResourceQuotaMemory)
-	data.Scheduler, _ = getSchedulerFromResponse(deployment)
+	// data.Scheduler, _ = getSchedulerFromResponse(deployment)
 	data.SchedulerSize = types.StringValue(deployment.SchedulerSize)
 
 	workerQueues := loadWorkerQueuesFromResponse(deployment)
@@ -418,6 +389,33 @@ func (r *DeploymentResource) Read(ctx context.Context, req resource.ReadRequest,
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
+
+// func getSchedulerFromResponse(deploymentResponse *api.DeploymentResponse) (*basetypes.ObjectValue, diag.Diagnostics) {
+// 	if deploymentResponse.Type != api.DeploymentTypeHybrid {
+// 		return nil
+// 	}
+// 	return types.ObjectValue(map[string]attr.Type{
+// 		"au":       types.Int64Type,
+// 		"replicas": types.Int64Type,
+// 	}, map[string]attr.Value{
+// 		"au":       types.Int64Value(int64(deploymentResponse.SchedulerAu)),
+// 		"replicas": types.Int64Value(int64(deploymentResponse.SchedulerReplicas)),
+// 	})
+// }
+
+// func loadSchedulerFromTFState(ctx context.Context, data DeploymentResourceModel) *api.SchedulerRequest {
+// 	// if data.Type.ValueString() != api.DeploymentTypeHybrid {
+// 	// 	return nil
+// 	// }
+
+// 	//TODO what if it's null?
+// 	au, _ := data.Scheduler.Attributes()["au"].(basetypes.Int64Valuable).ToInt64Value(ctx)
+// 	replicas, _ := data.Scheduler.Attributes()["replicas"].(basetypes.Int64Valuable).ToInt64Value(ctx)
+// 	return &api.SchedulerRequest{
+// 		Au:       int(au.ValueInt64()),
+// 		Replicas: int(replicas.ValueInt64()),
+// 	}
+// }
 
 func loadWorkerQueuesFromTFState(data DeploymentResourceModel) []api.WorkerQueue {
 	var workerQueues []api.WorkerQueue
@@ -465,7 +463,13 @@ func loadWorkerQueuesFromResponse(deployment *api.DeploymentResponse) []WorkerQu
 
 func loadEnvironmentVariablesFromResponse(deployment *api.DeploymentResponse) []EnvironmentVariableModel {
 	var envVars []EnvironmentVariableModel
+
 	for _, value := range deployment.EnvironmentVariables {
+		// TODO handle secret case
+		// strValue := types.StringValue(value.Value)
+		// if value.IsSecret {
+		// 	strValue
+		// }
 		envVars = append(envVars, EnvironmentVariableModel{
 			IsSecret: types.BoolValue(value.IsSecret),
 			Key:      types.StringValue(value.Key),
@@ -478,7 +482,6 @@ func loadEnvironmentVariablesFromResponse(deployment *api.DeploymentResponse) []
 func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data DeploymentResourceModel
 
-	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -488,10 +491,7 @@ func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 	workerQueues := loadWorkerQueuesFromTFState(data)
 	envVars := loadEnvironmentVariablesFromTFState(data)
 
-	log.Println("envVars ARE HERE")
-	log.Println(envVars)
 	deploymentUpdateRequest := &api.DeploymentUpdateRequest{
-		//TODO add Contact Emails
 		DefaultTaskPodCpu:    data.DefaultTaskPodCpu.ValueString(),
 		DefaultTaskPodMemory: data.DefaultTaskPodMemory.ValueString(),
 		Description:          data.Description.ValueString(),
@@ -503,11 +503,12 @@ func (r *DeploymentResource) Update(ctx context.Context, req resource.UpdateRequ
 		Name:                 data.Name.ValueString(),
 		ResourceQuotaCpu:     data.ResourceQuotaCpu.ValueString(),
 		ResourceQuotaMemory:  data.ResourceQuotaMemory.ValueString(),
-		SchedulerSize:        data.SchedulerSize.ValueString(),
-		Type:                 data.Type.ValueString(),
-		WorkerQueues:         workerQueues,
-		WorkloadIdentity:     data.WorkloadIdentity.ValueString(),
-		WorkspaceId:          data.WorkspaceId.ValueString(),
+		// Scheduler:            loadSchedulerFromTFState(ctx, data),
+		SchedulerSize:    data.SchedulerSize.ValueString(),
+		Type:             data.Type.ValueString(),
+		WorkerQueues:     workerQueues,
+		WorkloadIdentity: data.WorkloadIdentity.ValueString(),
+		WorkspaceId:      data.WorkspaceId.ValueString(),
 	}
 
 	deployResponse, err := api.UpdateDeployment(r.token, r.organizationId, data.Id.ValueString(), deploymentUpdateRequest)

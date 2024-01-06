@@ -83,7 +83,7 @@ type DeploymentResponse struct {
 	ResourceQuotaCpu         string                        `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory      string                        `json:"resourceQuotaMemory"`
 	RuntimeVersion           string                        `json:"runtimeVersion"`
-	SchedulerAu              string                        `json:"schedulerAu"`
+	SchedulerAu              int                           `json:"schedulerAu"`
 	SchedulerCpu             string                        `json:"schedulerCpu"`
 	SchedulerMemory          string                        `json:"schedulerMemory"`
 	SchedulerReplicas        int                           `json:"schedulerReplicas"`
@@ -120,8 +120,8 @@ type WorkerQueue struct {
 }
 
 type SchedulerRequest struct {
-	Au       string `json:"au"`
-	Replicas int    `json:"replicas"`
+	Au       int `json:"au"`
+	Replicas int `json:"replicas"`
 }
 
 type DeploymentCreateRequest struct {
@@ -140,7 +140,7 @@ type DeploymentCreateRequest struct {
 	Region               string                       `json:"region,omitempty"`
 	ResourceQuotaCpu     string                       `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory  string                       `json:"resourceQuotaMemory"`
-	Scheduler            SchedulerRequest             `json:"scheduler"`
+	Scheduler            *SchedulerRequest            `json:"scheduler"`
 	SchedulerSize        string                       `json:"schedulerSize"`
 	TaskPodNodePoolId    string                       `json:"taskPodNodePoolId"`
 	Type                 string                       `json:"type"`
@@ -161,7 +161,7 @@ type DeploymentUpdateRequest struct {
 	Name                 string                       `json:"name"`
 	ResourceQuotaCpu     string                       `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory  string                       `json:"resourceQuotaMemory"`
-	Scheduler            SchedulerRequest             `json:"scheduler"`
+	Scheduler            *SchedulerRequest            `json:"scheduler"`
 	SchedulerSize        string                       `json:"schedulerSize"`
 	TaskPodNodePoolId    string                       `json:"taskPodNodePoolId"`
 	Type                 string                       `json:"type,omitempty"`
