@@ -390,7 +390,7 @@ func loadWorkerQueuesFromTFState(data DeploymentResourceModel) []api.WorkerQueue
 }
 
 func loadEnvironmentVariablesFromTFState(data DeploymentResourceModel) []api.EnvironmentVariableRequest {
-	var envVars []api.EnvironmentVariableRequest
+	var envVars []api.EnvironmentVariableRequest = []api.EnvironmentVariableRequest{}
 	for _, value := range data.EnvironmentVariables {
 		envVars = append(envVars, api.EnvironmentVariableRequest{
 			IsSecret: value.IsSecret.ValueBool(),
