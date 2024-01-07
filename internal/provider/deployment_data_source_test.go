@@ -28,7 +28,7 @@ func TestDeploymentDataSource(t *testing.T) {
 func testDeploymentDataSourceConfig(workspaceName string) string {
 	orgId := os.Getenv("ORGANIZATION_ID")
 	return fmt.Sprintf(`
-provider "astronomer" {
+provider "astronomer" {	
 	organization_id = %[1]q
 }
 
@@ -45,13 +45,13 @@ resource "astronomer_deployment" "test" {
 	default_task_pod_memory = "1Gi"
 	description = "A Standard Deployment"
 	executor = "CELERY"
-	is_dag_deploy_enforced = true
+	is_dag_deploy_enabled = true
 	is_cicd_enforced = true
 	is_high_availability = true
 	name = "Test Deployment TF"
 	region = "us-east-1"
-	resource_quota_cpu = "160"
-	resource_quota_memory = "320Gi"
+	resource_quota_cpu = "1"
+	resource_quota_memory = "2Gi"
 	scheduler_size = "MEDIUM"
 	type = "STANDARD"
 	workspace_id = astronomer_workspace.test.id

@@ -120,31 +120,32 @@ type WorkerQueue struct {
 }
 
 type SchedulerRequest struct {
-	Au       string `json:"au"`
-	Replicas int    `json:"replicas"`
+	Au       int `json:"au"`
+	Replicas int `json:"replicas"`
 }
 
 type DeploymentCreateRequest struct {
-	AstroRuntimeVersion  string           `json:"astroRuntimeVersion"`
-	ClusterId            string           `json:"clusterId,omitempty"`
-	CloudProvider        string           `json:"cloudProvider,omitempty"`
-	DefaultTaskPodCpu    string           `json:"defaultTaskPodCpu"`
-	DefaultTaskPodMemory string           `json:"defaultTaskPodMemory"`
-	Description          string           `json:"description"`
-	Executor             string           `json:"executor"`
-	IsCicdEnforced       bool             `json:"isCicdEnforced"`
-	IsDagDeployEnabled   bool             `json:"isDagDeployEnabled"`
-	IsHighAvailability   bool             `json:"isHighAvailability"`
-	Name                 string           `json:"name"`
-	Region               string           `json:"region,omitempty"`
-	ResourceQuotaCpu     string           `json:"resourceQuotaCpu"`
-	ResourceQuotaMemory  string           `json:"resourceQuotaMemory"`
-	Scheduler            SchedulerRequest `json:"scheduler	"`
-	SchedulerSize        string           `json:"schedulerSize"`
-	TaskPodNodePoolId    string           `json:"taskPodNodePoolId"`
-	Type                 string           `json:"type"`
-	WorkerQueues         []WorkerQueue    `json:"workerQueues"`
-	WorkspaceId          string           `json:"workspaceId"`
+	AstroRuntimeVersion  string                       `json:"astroRuntimeVersion"`
+	CloudProvider        string                       `json:"cloudProvider,omitempty"`
+	ClusterId            string                       `json:"clusterId,omitempty"`
+	DefaultTaskPodCpu    string                       `json:"defaultTaskPodCpu"`
+	DefaultTaskPodMemory string                       `json:"defaultTaskPodMemory"`
+	Description          string                       `json:"description"`
+	EnvironmentVariables []EnvironmentVariableRequest `json:"environmentVariables"`
+	Executor             string                       `json:"executor"`
+	IsCicdEnforced       bool                         `json:"isCicdEnforced"`
+	IsDagDeployEnabled   bool                         `json:"isDagDeployEnabled"`
+	IsHighAvailability   bool                         `json:"isHighAvailability"`
+	Name                 string                       `json:"name"`
+	Region               string                       `json:"region,omitempty"`
+	ResourceQuotaCpu     string                       `json:"resourceQuotaCpu"`
+	ResourceQuotaMemory  string                       `json:"resourceQuotaMemory"`
+	Scheduler            *SchedulerRequest            `json:"scheduler"`
+	SchedulerSize        string                       `json:"schedulerSize"`
+	TaskPodNodePoolId    string                       `json:"taskPodNodePoolId"`
+	Type                 string                       `json:"type"`
+	WorkerQueues         []WorkerQueue                `json:"workerQueues"`
+	WorkspaceId          string                       `json:"workspaceId"`
 }
 
 type DeploymentUpdateRequest struct {
@@ -160,9 +161,12 @@ type DeploymentUpdateRequest struct {
 	Name                 string                       `json:"name"`
 	ResourceQuotaCpu     string                       `json:"resourceQuotaCpu"`
 	ResourceQuotaMemory  string                       `json:"resourceQuotaMemory"`
+	Scheduler            *SchedulerRequest            `json:"scheduler"`
 	SchedulerSize        string                       `json:"schedulerSize"`
+	TaskPodNodePoolId    string                       `json:"taskPodNodePoolId"`
 	Type                 string                       `json:"type,omitempty"`
 	WorkerQueues         []WorkerQueue                `json:"workerQueues"`
+	WorkloadIdentity     string                       `json:"workloadIdentity"`
 	WorkspaceId          string                       `json:"workspaceId"`
 }
 
