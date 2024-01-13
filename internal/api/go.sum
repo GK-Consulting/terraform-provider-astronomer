@@ -1,0 +1,8 @@
+github.com/GK-Consulting/astronomer-sdk-golang v0.0.0-20240112134347-7871ce8cf35c h1:e038+7gHE2ZayZMEevTm4GzHVrME/MccVfQ4n/78nWw=
+github.com/GK-Consulting/astronomer-sdk-golang v0.0.0-20240112134347-7871ce8cf35c/go.mod h1:2ne8To+hc2L3UJO49yOLwsnLtv/6ZJh1aG0ZUdY2bgg=
+github.com/GK-Consulting/astronomer-sdk-golang v0.0.0-20240113021839-b254f3ca53e3 h1:g3vahC5u7lHHR7mtADSDCHjhMRD0/g1njsrlMstEVdw=
+github.com/GK-Consulting/astronomer-sdk-golang v0.0.0-20240113021839-b254f3ca53e3/go.mod h1:mG+Rfvw0CbLG3rw17333hEdrdTQu4N+un6MdGX3xvTI=
+github.com/GK-Consulting/astronomer-sdk-golang/iam v0.0.0-20240112133119-079f41d9491d h1:oC4/PIuTejLvCv1fl1a473lPzXCK8XJU6gvmDtkg4VE=
+github.com/GK-Consulting/astronomer-sdk-golang/iam v0.0.0-20240112133119-079f41d9491d/go.mod h1:mmJ2dVVyx1EvfDdxE4kuBShO5Kh7syIqkex2wxVwRqw=
+github.com/GK-Consulting/astronomer-sdk-golang/platform v0.0.0-20240112133119-079f41d9491d h1:SLB8akYIBCg12woQdvxw1Ra7OV0qngJ/nFkUT14GIFw=
+github.com/GK-Consulting/astronomer-sdk-golang/platform v0.0.0-20240112133119-079f41d9491d/go.mod h1:w1HrqjDWgoxzr2dnUsOE8vZ/RpqJVnPOpckhMagJDsY=
